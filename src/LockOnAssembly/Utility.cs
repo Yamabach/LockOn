@@ -32,7 +32,7 @@ namespace LOSpace{
 				else
 				{
 					float E = Mathf.Sqrt(D);
-					t = Utility.PlusMin((-halfB - E) / A, (-halfB + E) / A);
+					t = PlusMin((-halfB - E) / A, (-halfB + E) / A);
 				}
 			}
 			return t;

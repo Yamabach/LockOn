@@ -8,6 +8,9 @@ using System.Xml.Serialization;
 
 namespace LOSpace
 {
+	/// <summary>
+	/// ACM製ブロックであるかどうかを判断するためのクラス
+	/// </summary>
 	[Reloadable, XmlRoot("AdShootingProp")]
 	public class AdShootingProp : BlockModule
 	{
@@ -159,6 +162,9 @@ namespace LOSpace
 		[Reloadable, RequireToValidate, XmlElement("ShootingState")]
 		public AdShootingProp.ShootingState Shootingstateinfo;
 	}
+	/// <summary>
+	/// 摩擦タイプ
+	/// </summary>
 	public enum CombineType
     {
 		Average,
@@ -166,12 +172,18 @@ namespace LOSpace
 		Maximum,
 		Multiply
     }
+	/// <summary>
+	/// 衝突タイプ
+	/// </summary>
 	public enum CollisionType
     {
 		Discrete,
 		Continuous,
 		ContinuousDynamic
     }
+	/// <summary>
+	/// ACM上でのVector3
+	/// </summary>
 	[Serializable]
 	public struct ModVector3
     {

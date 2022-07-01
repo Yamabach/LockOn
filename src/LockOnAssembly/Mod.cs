@@ -10,10 +10,16 @@ using UnityEngine.UI;
 
 namespace LOSpace
 {
+	/// <summary>
+	/// ModEntry
+	/// </summary>
 	public class Mod : ModEntryPoint
 	{
 		public GameObject mod;
-		public static bool ACMLoaded; // ACMがロードされているかどうか
+		/// <summary>
+		/// ACMがロードされているかどうか
+		/// </summary>
+		public static bool ACMLoaded;
 
 		public override void OnLoad()
 		{
@@ -24,19 +30,34 @@ namespace LOSpace
 			UnityEngine.Object.DontDestroyOnLoad(mod);
 			ACMLoaded = Mods.IsModLoaded(new Guid("A033CF51-D84F-45DE-B9A9-DEF1ED9A6075"));
 		}
+		/// <summary>
+		/// mod専用ログ関数
+		/// </summary>
+		/// <param name="msg"></param>
 		public static void Log(string msg)
         {
 			Debug.Log("Lock On Mod : " + msg);
         }
+		/// <summary>
+		/// mod専用警告関数
+		/// </summary>
+		/// <param name="msg"></param>
 		public static void Warning(string msg)
         {
 			Debug.LogWarning("Lock On Mod : " + msg);
         }
+		/// <summary>
+		/// mod専用エラー関数
+		/// </summary>
+		/// <param name="msg"></param>
 		public static void Error(string msg)
         {
 			Debug.LogError("Lock On Mod : " + msg);
         }
 	}
+	/// <summary>
+	/// コンポーネントのアタッチ用クラス
+	/// </summary>
 	public class AddScriptManager : SingleInstance<AddScriptManager>
 	{
 		public override string Name { get { return "Add Script Manager"; } }
@@ -101,7 +122,10 @@ namespace LOSpace
 			}
 		}
 	}
-	public abstract class AbstractBlockScript : MonoBehaviour //ブロック基本
+	/// <summary>
+	/// ブロック用コンポーネント基底クラス
+	/// </summary>
+	public abstract class AbstractBlockScript : MonoBehaviour
 	{
 		[Obsolete]
 		public Action<XDataHolder> BlockDataLoadEvent;
@@ -296,31 +320,56 @@ namespace LOSpace
 		}
 
 	}
-	// スタブロ
+	/// <summary>
+	/// スタブロ
+	/// ターゲット候補を網羅し、その中から適切なターゲットを選ぶ役割
+	/// 画面のターゲットの上にロックオンされたかを示すマーカーを表示する
+	/// </summary>
 	public class StartingBlockScript : AbstractBlockScript
     {
-		public GameObject CurrentTarget; // 現在の目標
-		public MPTeam team; // 現在のチーム
-		public int playerId; // サーバーID
-		public Rigidbody rigid; // スタブロのrigidbody
+		/// <summary>
+		/// 現在の目標
+		/// </summary>
+		public GameObject CurrentTarget;
+		/// <summary>
+		/// 現在の自分のチーム
+		/// </summary>
+		public MPTeam team;
+		/// <summary>
+		/// サーバ上でのプレイヤーID
+		/// </summary>
+		public int playerId;
 
-		// 敵候補
+		/// <summary>
+		/// 敵候補
+		/// </summary>
 		public List<Enemy> TargetCandidates;
 
 		// UI
-		public Texture markerTexture; // 敵にかかるマーク
-		public Texture debugTextureRed; // デバッグ用
+		/// <summary>
+		/// 敵にかかるマーク
+		/// </summary>
+		public Texture markerTexture;
+		/// <summary>
+		/// 敵にかかるマーク（デバッグ用）
+		/// </summary>
+		public Texture debugTextureRed;
+		/// <summary>
+		/// 敵にかかるマーク（デバッグ用）
+		/// </summary>
 		public Texture debugTextureGreen;
 
-		// 敵の画面内に入っているかの判定
+		/// <summary>
+		/// 敵の画面内に入っているかの判定
+		/// </summary>
 		public Camera mainCamera;
+		/// <summary>
+		/// 画面の大きさ
+		/// </summary>
 		public Vector2 screenSize;
 
         public override void SafeAwake()
         {
-			rigid = BB.noRigidbody ? null : BB.Rigidbody;
-			//GetComponent<Rigidbody>() ?? gameObject.AddComponent<Rigidbody>();
-
 			// サーバーID取得
 			playerId = BB.ParentMachine.PlayerID;
 
@@ -447,6 +496,10 @@ namespace LOSpace
         // デバッグ用GUI
         public Rect debugWindowRect = new Rect(100, 100, 200, 150);
 		public int debugWindowId = ModUtility.GetWindowId();
+		/// <summary>
+		/// ターゲットマーカー
+		/// デバッグ用
+		/// </summary>
 		public void OnGUI()
 		{
 			// 自分のところでだけ表示する
@@ -506,14 +559,18 @@ namespace LOSpace
 					continue;
                 }
 				var tex = e.LockOn ? debugTextureRed : debugTextureGreen;
-				var targetPos = ScreenPoint(e.Target, new Vector2(50, 50));
+				Rect targetPos;
+				var z = ScreenPoint(e.Target, new Vector2(50, 50), out targetPos);
 				GUI.DrawTexture(targetPos, tex, ScaleMode.StretchToFill, true, 0);
             }
         }
 
-		// ターゲットになりうる敵を全てリストに格納する
-		// 都度新しくしているとロックオン時間を計測できなくなる ターゲットのゲージを保持したまま新たなリストを作る必要がある
-		// ターゲット候補の中から前提条件を満たさなくなったものを除く（ターゲットリストにいないものを弾く）→新たに前提条件を満たすもので、まだ候補に入っていないものを加える
+		/// <summary>
+		/// ターゲットになりうる敵を全てリストに格納する
+		/// 都度新しくしているとロックオン時間を計測できなくなる ターゲットのゲージを保持したまま新たなリストを作る必要がある
+		/// ターゲット候補の中から前提条件を満たさなくなったものを除く（ターゲットリストにいないものを弾く）→新たに前提条件を満たすもので、まだ候補に入っていないものを加える
+		/// 将来的にはUpdateに置かずに適切なタイミングで呼び出すようにしたい
+		/// </summary>
 		public void SetTargetCandidates()
         {
 			var ret = new List<Enemy>();
@@ -551,33 +608,52 @@ namespace LOSpace
             }
 			TargetCandidates = new List<Enemy>(ret);
         }
-		// ターゲットを変更する
+		/// <summary>
+		/// ターゲットを変更する
+		/// </summary>
 		public void ChangeTarget(GameObject NextTarget)
         {
 			CurrentTarget = (NextTarget == null) ? null : NextTarget;
         }
-		
-		// 目標の画面上における位置 // point.zを返り値にしてRectをoutにした方が良さそう
-		public Rect ScreenPoint(GameObject target, Vector2 scale)
+		/// <summary>
+		/// 目標の画面上における位置
+		/// point.zを返り値にしてRectをoutにした方が良さそう
+		/// </summary>
+		/// <param name="target">目標</param>
+		/// <param name="scale">画面サイズ</param>
+		/// <returns>画面からみた目標の深度（z座標）</returns>
+		public float ScreenPoint(GameObject target, Vector2 scale, out Rect result)
         {
 			Vector3 point = mainCamera.WorldToScreenPoint(target.transform.position);
 			Vector2 pos = new Vector2(point.x - scale.x/2, screenSize.y - point.y - scale.y/2);
 			//point.y = screenSize.y - point.y;
-			return point.z > 0 ? new Rect(pos, scale) : new Rect(0, 0, 0, 0);
+			result = point.z > 0 ? new Rect(pos, scale) : new Rect(0, 0, 0, 0);
+			return point.z;
         }
-
-		// 敵クラス
+		/// <summary>
+		/// 敵クラス（rigidbodyは想定しない）
+		/// </summary>
 		public class Enemy
         {
-			public GameObject Target; // ターゲットのゲームオブジェクト
-			public bool LockOn // 自分がロックオンしているかどうか
+			/// <summary>
+			/// ターゲットのゲームオブジェクト
+			/// </summary>
+			public GameObject Target;
+			/// <summary>
+			/// 自身がロックオンしているかどうか
+			/// </summary>
+			public bool LockOn
             {
                 get
                 {
 					return gauge == 1f;
                 }
             }
-			private float gauge; // ゲージ 0f~1f の値をとる
+			/// <summary>
+			/// ゲージ
+			/// 0 ~ 1
+			/// </summary>
+			private float gauge;
 			public float Gauge
 			{
 				set
@@ -591,6 +667,11 @@ namespace LOSpace
 					return gauge;
                 }
 			}
+			/// <summary>
+			/// コンストラクタ
+			/// </summary>
+			/// <param name="go">ターゲット</param>
+			/// <param name="g">ゲージ</param>
 			public Enemy(GameObject go, float g=0)
             {
 				Target = go;
@@ -598,19 +679,54 @@ namespace LOSpace
             }
         }
     }
-	// 基本
+	/// <summary>
+	/// 弾道変更を行う武装系ブロックの基底クラス
+	/// スタブロでロックオンした敵の移動位置を予測し、発射角度を変更する役割
+	/// TODO: 照準が当たる先にマーカーを表示する
+	/// TODO: rigidbodyの排除（クライアントのゲーム上にはrigidbodyが無いため）
+	/// </summary>
 	public abstract class LockOnBlockScript : AbstractBlockScript
     {
-		public Quaternion Correction; // 補正角度
-		public Transform ProjectileSpawn; // 矢が出てくる位置姿勢
-		public Vector3 Target; // 目標位置
-		public Vector3 TargetVelo; // 目標の速度
-		public Vector3 TargetAngularVelo; // 目標の角速度
-		public bool gravity; // ゴッドツール使用時かどうか
-		public readonly float g = 32.81f; // 重力加速度
-		public float initialSpeed; // 弾の初期速度
+		/// <summary>
+		/// 補正角度
+		/// </summary>
+		public Quaternion Correction;
+		/// <summary>
+		/// 矢が出てくる位置姿勢
+		/// </summary>
+		public Transform ProjectileSpawn;
+		/// <summary>
+		/// 現在の目標位置
+		/// </summary>
+		public Vector3 TargetPos = Vector3.zero;
+		/// <summary>
+		/// 1フレーム前の目標位置
+		/// </summary>
+		public Vector3 TargetPosBefore1 = Vector3.zero;
+		/// <summary>
+		/// 2フレーム前の目標位置
+		/// </summary>
+		public Vector3 TargetPosBefore2 = Vector3.zero;
+		/// <summary>
+		/// 重力があるかどうか
+		/// </summary>
+		public bool gravity;
+		/// <summary>
+		///  重力加速度 32.81m/s2
+		/// </summary>
+		public readonly float g = 32.81f;
+		/// <summary>
+		/// 弾の初速度
+		/// </summary>
+		public float initialSpeed;
+		/// <summary>
+		/// 1フレーム前の位置
+		/// </summary>
+		public Vector3 PosBefore1 = Vector3.zero;
 
-		// スタブロ
+		/// <summary>
+		/// スタブロ
+		/// </summary>
 		public StartingBlockScript startingBlock;
 
 		public override void SafeAwake()
@@ -621,156 +737,187 @@ namespace LOSpace
 			gravity = !StatMaster.GodTools.GravityDisabled;
 
 			// スタブロを取得する
-			if (BB.isSimulating)
+			foreach (BlockBehaviour block in BB.isSimulating ? BB.ParentMachine.SimulationBlocks : BB.ParentMachine.BuildingBlocks)
 			{
-				foreach (BlockBehaviour block in BB.ParentMachine.SimulationBlocks)
-				{
-					startingBlock = block.GetComponent<StartingBlockScript>();
-					if (startingBlock != null) break;
-				}
+				startingBlock = block.GetComponent<StartingBlockScript>();
+				if (startingBlock != null) break;
 			}
-            else
+			if (startingBlock == null)
             {
-				startingBlock = null;
+				Mod.Error("StartingBlock is null!");
             }
 
 			// 弾の初期速度設定
-			SetInitialSpeed();
+			SetInitialSpeed(1f);
 		}
 		public override void SimulateFixedUpdateAlways()
 		{
 			// 弾道予測
 			if (startingBlock.CurrentTarget != null) // 標的が存在する場合
 			{
-				SetTarget();
+				SetTarget(startingBlock.CurrentTarget);
 				//SetTarget(LockOnManager.Instance.DebugTargetPos, LockOnManager.Instance.DebugTargetRigid.velocity);
 				gravity = !StatMaster.GodTools.GravityDisabled;
 
-				Vector3 predTargetPos;
-				if (TargetAngularVelo.sqrMagnitude > Mathf.Pow(0.03f, 2)) // 円形予測
-				{
-					predTargetPos = CircularPredict(Target, TargetVelo, TargetAngularVelo, initialSpeed);
-				}
-				else // 線形予測
-				{
-					predTargetPos = LinearPredict(Target, TargetVelo, initialSpeed);
-				}
-				ProjectileSpawn.rotation = Rotate(predTargetPos);
+				ProjectileSpawn.rotation = Rotate(Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, initialSpeed));
 			}
             else // 標的が存在しない場合
             {
 				ProjectileSpawn.rotation = Rotate();
             }
+
+			// 目標位置更新
+			TargetPosBefore2 = TargetPosBefore1;
+			TargetPosBefore1 = TargetPos;
+			PosBefore1 = transform.position;
 		}
-		// 弾の姿勢を取得
+		/// <summary>
+		/// 弾の姿勢を取得
+		/// </summary>
 		public virtual void SetProjectileSpawn()
 		{
 			ProjectileSpawn = transform.FindChild("projective spawn");
 		}
-		// 弾の初期速度設定
-		public virtual void SetInitialSpeed()
+		/// <summary>
+		/// 弾の初期速度設定
+		/// </summary>
+		public virtual void SetInitialSpeed(float spd = 1f)
         {
-			initialSpeed = 1f;
+			initialSpeed = spd;
         }
-		// 弾道予測
-		public virtual Vector3 LinearPredict(Vector3 pos, Vector3 velo, float speed = 1f) // 現在の標的の位置、速度、弾の速さ
-		{
-			// 射撃する位置から見た現在の標的の位置
-			Vector3 deltaPos = pos - transform.position;
-
-			// 二次方程式を解き、目標の位置を予測する
-			float t = Utility.SolveEquation(velo.sqrMagnitude - speed * speed, Vector3.Dot(velo, deltaPos), deltaPos.sqrMagnitude);
-			Vector3 targetpos = pos + velo * t;
-
-			// 重力の処理
-			if (gravity)
+		/// <summary>
+		/// 線形予測か円形予測かを選択し、目標の位置を予測する
+		/// </summary>
+		/// <param name="targetPos">目標位置</param>
+		/// <param name="targetPos1">1F前の目標位置</param>
+		/// <param name="targetPos2">1F前の目標位置</param>
+		/// <param name="speed">弾の初速</param>
+		/// <param name="limitAngle">線形か円形かを選択する閾値 3F間の角度</param>
+		/// <returns></returns>
+		public Vector3 Predict(Vector3 targetPos, Vector3 targetPos1, Vector3 targetPos2, float speed = 1f, float limitAngle = 0.03f, float limitMove = 0.05f)
+        {
+			Vector3 predTargetPos;
+			if (Mathf.Abs(Vector3.Angle(targetPos - targetPos1, targetPos1 - targetPos2)) < limitAngle && (targetPos - targetPos1).sqrMagnitude > limitMove * limitMove)
 			{
-				targetpos.y += g * t * t / 2;
-			}
-
-			return targetpos;
-		}
-		public virtual Vector3 LinearPredict(Rigidbody rigid, float speed = 1f)
-        {
-			return LinearPredict(rigid.position, rigid.velocity, speed);
-        }
-		public virtual Vector3 CircularPredict(Vector3 pos, Vector3 velo, Vector3 angularVelo, float speed = 1f) // 現在の標的の位置，速度，角速度，弾の速さ
-        {
-			// 3点から円の中心点を出す
-			Vector3 radius = Vector3.Cross(velo, angularVelo) / Vector3.SqrMagnitude(angularVelo);
-			Vector3 centerPos = pos - radius;
-
-			// 中心点から見た1フレームの角速度と軸を出す
-			float angle = angularVelo.magnitude;
-			Vector3 axis = angularVelo / angle;
-
-			// 現在位置で弾の到達時間を出す
-			float predictionFlame = Vector3.Distance(pos, transform.position) / speed;
-
-			// 到達時間分を移動した予測位置で再計算して到達時間を補正する
-			for (int i = 0; i<3; ++i)
-            {
-				predictionFlame = Vector3.Distance(Utility.RotateToPosition(pos, centerPos, axis, angle * predictionFlame), transform.position) / speed;
-            }
-
-			var targetpos = Utility.RotateToPosition(pos, centerPos, axis, angle * predictionFlame);
-
-			// 重力の処理
-			if (gravity)
-			{
-				targetpos.y += g * predictionFlame * predictionFlame / 2;
-			}
-
-			return targetpos;
-        }
-		public virtual Vector3 CircularPredict(Rigidbody rigid, float speed = 1f)
-        {
-			return CircularPredict(rigid.position, rigid.velocity, rigid.angularVelocity, speed);
-        }
-		public virtual Quaternion Rotate(Vector3 to, float limitAngle = 30f) // 正面の向きに注意！
-		{
-			Quaternion ret;
-			float angle = Vector3.Angle(-transform.up, to - transform.position);
-			if (angle < limitAngle)
-			{
-				ret = Quaternion.LookRotation(to - transform.position);
+				// 円形予測
+				predTargetPos = CircularPredict(targetPos, targetPos1, targetPos2, speed);
 			}
 			else
 			{
-				ret = Quaternion.LookRotation(-transform.up);
+				// 線形予測
+				predTargetPos = LinearPredict(targetPos, targetPos1, speed);
 			}
-			return ret;
+			return predTargetPos;
 		}
+		/// <summary>
+		/// 線形予測
+		/// </summary>
+		/// <param name="targetPos">目標の現在位置</param>
+		/// <param name="targetPrePos">目標の速度</param>
+		/// <param name="speed">弾の速さ</param>
+		/// <returns></returns>
+		public virtual Vector3 LinearPredict(Vector3 targetPos, Vector3 targetPrePos, float speed = 1f) // 現在の標的の位置、速度、弾の速さ
+		{
+			//Unityの物理はm/sなのでm/flameにする
+			speed = speed * Time.fixedDeltaTime;
+			Vector3 v3_Mv = targetPos - targetPrePos;
+			Vector3 v3_Pos = targetPos - ProjectileSpawn.position;
+
+			float A = Vector3.SqrMagnitude(v3_Mv) - speed * speed;
+			float B = Vector3.Dot(v3_Pos, v3_Mv);
+			float C = Vector3.SqrMagnitude(v3_Pos);
+
+			//0割禁止
+			if (A == 0 && B == 0) return targetPos;
+			if (A == 0) return targetPos + v3_Mv * (-C / B / 2);
+
+			//虚数解はどうせ当たらないので絶対値で無視した
+			float D = Mathf.Sqrt(Mathf.Abs(B * B - A * C));
+			return targetPos + v3_Mv * Utility.PlusMin((-B - D) / A, (-B + D) / A);
+		}
+		/// <summary>
+		/// 円形予測
+		/// </summary>
+		/// <param name="pos"></param>
+		/// <param name="velo"></param>
+		/// <param name="angularVelo"></param>
+		/// <param name="speed"></param>
+		/// <returns></returns>
+		public virtual Vector3 CircularPredict(Vector3 targetPos, Vector3 targetPos1, Vector3 targetPos2, float speed = 1f) // 現在の標的の位置，速度，角速度，弾の速さ
+        {
+			//Unityの物理はm/sなのでm/flameにする
+			speed = speed * Time.fixedDeltaTime;
+
+			//3点から円の中心点を出す
+			Vector3 CenterPosition = Utility.Circumcenter(targetPos, targetPos1, targetPos2);
+
+			//中心点から見た1フレームの角速度と軸を出す
+			Vector3 axis = Vector3.Cross(targetPos1 - CenterPosition, targetPos - CenterPosition);
+			float angle = Vector3.Angle(targetPos1 - CenterPosition, targetPos - CenterPosition);
+
+			//現在位置で弾の到達時間を出す
+			float PredictionFlame = Vector3.Distance(targetPos, ProjectileSpawn.position) / speed;
+
+			//到達時間分を移動した予測位置で再計算して到達時間を補正する。
+			for (int i = 0; i < 3; ++i)
+			{
+				PredictionFlame = Vector3.Distance(Utility.RotateToPosition(targetPos, CenterPosition, axis, angle * PredictionFlame), ProjectileSpawn.position) / speed;
+			}
+			var result = Utility.RotateToPosition(targetPos, CenterPosition, axis, angle * PredictionFlame);
+
+			// 重力の処理
+			// 重力で落ちる分だけ目標位置を上げる
+			if (gravity)
+			{
+				result.y += g * PredictionFlame * PredictionFlame / 2;
+			}
+
+			return result;
+		}
+		/// <summary>
+		/// 目標を向くように回転する
+		/// </summary>
+		/// <param name="to">目標位置</param>
+		/// <param name="limitAngle">回転可能な上限角度</param>
+		/// <returns></returns>
+		public virtual Quaternion Rotate(Vector3 to, float limitAngle = 30f) // 正面の向きに注意！
+		{
+			return Vector3.Angle(-transform.up, to - transform.position) < limitAngle ? Quaternion.LookRotation(to - transform.position) : Quaternion.LookRotation(-transform.up);
+		}
+		/// <summary>
+		/// 目標を向くように回転する
+		/// </summary>
+		/// <returns></returns>
 		public virtual Quaternion Rotate()
         {
 			return Quaternion.LookRotation(-transform.up);
         }
-		// 目標を定める
-		public virtual void SetTarget(Vector3 pos, Vector3 velo, Vector3 angularVelo)
+		/// <summary>
+		/// 目標を定める
+		/// </summary>
+		public virtual void SetTarget(Vector3 pos)
         {
-			Target = pos == null ? Vector3.zero : pos;
-			TargetVelo = velo == null ? Vector3.zero : velo;
-			TargetAngularVelo = angularVelo == null ? Vector3.zero : angularVelo;
+			TargetPos = (pos == null) ? Vector3.zero : pos;
         }
+		/// <summary>
+		/// 目標を定める
+		/// </summary>
+		/// <param name="nextTarget"></param>
 		public virtual void SetTarget(GameObject nextTarget)
         {
 			if (nextTarget != null)
 			{
-				//var rigid = nextTarget.GetComponent<Rigidbody>() ?? nextTarget.AddComponent<Rigidbody>(); // クライアントのスタブロはrigid==nullになる
-				var block = nextTarget.GetComponent<BlockBehaviour>();
-				var rigid = block.noRigidbody ? null : block.Rigidbody;
-				if (rigid == null)
-                {
-					SetTarget(Vector3.zero, Vector3.zero, Vector3.zero);
-					return;
-                }
-				SetTarget(rigid.position, rigid.velocity, rigid.angularVelocity);
+				SetTarget(nextTarget.transform.position);
 			}
             else
             {
-				SetTarget(Vector3.zero, Vector3.zero, Vector3.zero);
+				SetTarget(Vector3.zero);
             }
         }
+		/// <summary>
+		/// 目標を決める
+		/// 存在しなければvector3.zeroをセットする
+		/// </summary>
 		public virtual void SetTarget()
         {
 			if (startingBlock == null)
@@ -784,13 +931,21 @@ namespace LOSpace
 			}
 			if (startingBlock == null)
             {
-				SetTarget(Vector3.zero, Vector3.zero, Vector3.zero);
+				SetTarget(Vector3.zero);
 				return;
             }
-			SetTarget(startingBlock.CurrentTarget == null ? null : startingBlock.CurrentTarget);
+			if (startingBlock.CurrentTarget == null)
+            {
+				SetTarget(Vector3.zero);
+				return;
+            }
+			SetTarget(startingBlock.CurrentTarget);
         }
 	}
-	// Cannon系 // 逆向きに弾が出るトラブルあり
+	/// <summary>
+	/// Cannon系
+	/// 逆向きに弾が出るトラブルあり
+	/// </summary>
 	public class CannonScript : LockOnBlockScript
     {
 		public CanonBlock Cannon;
@@ -810,11 +965,11 @@ namespace LOSpace
         {
 			if (startingBlock.CurrentTarget != null)
 			{
-				SetTarget();
+				SetTarget(startingBlock.CurrentTarget);
 				gravity = !StatMaster.GodTools.GravityDisabled;
 
 				// 弾道予測
-				var predTargetPos = LinearPredict(Target, TargetVelo, initialSpeed);
+				var predTargetPos = Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, initialSpeed);
 				if (Cannon.shrapnel)
 				{
 					Cannon.boltSpawnRot = Rotate(predTargetPos); // 拡散砲の発射方向を変更
@@ -828,17 +983,24 @@ namespace LOSpace
             {
 				Cannon.boltSpawnRot = Rotate();
             }
+
+			// 目標位置更新
+			TargetPosBefore2 = TargetPosBefore1;
+			TargetPosBefore1 = TargetPos;
+			PosBefore1 = transform.position;
 		}
         public override void SetProjectileSpawn()
         {
 			ProjectileSpawn = null;
         }
-        public override void SetInitialSpeed()
+        public void SetInitialSpeed()
         {
 			initialSpeed = Cannon.boltSpeed * (Cannon.shrapnel ? 1f : 1f);
         }
     }
-	// Crossbow
+	/// <summary>
+	/// Crossbow
+	/// </summary>
 	public class CrossbowScript : LockOnBlockScript
     {
 		public CrossBowBlock Crossbow;
@@ -860,26 +1022,9 @@ namespace LOSpace
 				SetInitialSpeed();
 			}
 
-			// 弾の初期姿勢を取得
-			SetProjectileSpawn();
-
-			gravity = !StatMaster.GodTools.GravityDisabled;
-
-			// スタブロを取得する
-			if (BB.isSimulating)
-			{
-				foreach (BlockBehaviour block in BB.ParentMachine.SimulationBlocks)
-				{
-					startingBlock = block.GetComponent<StartingBlockScript>();
-					if (startingBlock != null) break;
-				}
-			}
-			else
-			{
-				startingBlock = null;
-			}
+			base.SafeAwake();
 		}
-        public override void SetInitialSpeed()
+        public void SetInitialSpeed()
         {
 			if (Crossbow.PowerSlider != null)
 			{
@@ -891,7 +1036,9 @@ namespace LOSpace
             }
         }
     }
-	// Flamethrower
+	/// <summary>
+	/// Flamethrower
+	/// </summary>
 	public class FlamethrowerScript : LockOnBlockScript
     {
 		public Transform Fire; // 火のエフェクト
@@ -902,113 +1049,85 @@ namespace LOSpace
 			Fire = transform.FindChild("Fire");
 
 			base.SafeAwake();
+
+			// 常に重力の影響を受けない
+			gravity = false;
 		}
         public override void SimulateFixedUpdateAlways()
         {
 			if (startingBlock.CurrentTarget != null)
 			{
-				SetTarget();
+				SetTarget(startingBlock.CurrentTarget);
 
 				// 弾道予測
-				Vector3 predTargetPos;
-				if (TargetAngularVelo.sqrMagnitude > Mathf.Pow(0.03f, 2)) // 円形予測
-				{
-					predTargetPos = CircularPredict(Target, TargetVelo, TargetAngularVelo, initialSpeed);
-				}
-				else // 線形予測
-				{
-					predTargetPos = LinearPredict(Target, TargetVelo, initialSpeed);
-				}
-				Correction = Rotate(predTargetPos);
-				Fire.rotation = Correction;
-				ProjectileSpawn.rotation = Correction;
+				Correction = Rotate(Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, initialSpeed));
 			}
             else
             {
 				Correction = Rotate();
-				Fire.rotation = Correction;
-				ProjectileSpawn.rotation = Correction;
-            }
+			}
+			Fire.rotation = Correction;
+			ProjectileSpawn.rotation = Correction;
 		}
 		public override void SetProjectileSpawn()
 		{
 			ProjectileSpawn = transform.FindChild("FireTrigger");
 		}
-        public override void SetInitialSpeed()
+        public void SetInitialSpeed()
         {
 			initialSpeed = 500f;
-        }
-        // 弾道予測
-        public override Vector3 LinearPredict(Vector3 pos, Vector3 velo, float speed = 100f) // 現在の標的の位置、速度、矢の早さ
-		{
-			// 射撃する位置から見た現在の標的の位置
-			Vector3 deltaPos = pos - transform.position;
-
-			// 二次方程式を解き、目標の位置を予測する
-			float t = Utility.SolveEquation(velo.sqrMagnitude - speed * speed, Vector3.Dot(velo, deltaPos), deltaPos.sqrMagnitude);
-			Vector3 targetpos = pos + velo * t;
-
-			return targetpos;
 		}
-		public override Vector3 CircularPredict(Vector3 pos, Vector3 velo, Vector3 angularVelo, float speed = 1f) // 現在の標的の位置，速度，角速度，弾の速さ
+		/// <summary>
+		/// 目標を向くように回転する
+		/// </summary>
+		/// <param name="to">目標位置</param>
+		/// <param name="limitAngle">回転可能な上限角度</param>
+		/// <returns></returns>
+		public override Quaternion Rotate(Vector3 to, float limitAngle = 30f) // 正面の向きに注意！
 		{
-			// 3点から円の中心点を出す
-			Vector3 radius = Vector3.Cross(velo, angularVelo) / Vector3.SqrMagnitude(angularVelo);
-			Vector3 centerPos = pos - radius;
-
-			// 中心点から見た1フレームの角速度と軸を出す
-			float angle = angularVelo.magnitude;
-			Vector3 axis = angularVelo / angle;
-
-			// 現在位置で弾の到達時間を出す
-			float predictionFlame = Vector3.Distance(pos, transform.position) / speed;
-
-			// 到達時間分を移動した予測位置で再計算して到達時間を補正する
-			for (int i = 0; i < 3; ++i)
-			{
-				predictionFlame = Vector3.Distance(Utility.RotateToPosition(pos, centerPos, axis, angle * predictionFlame), transform.position) / speed;
-			}
-
-			return Utility.RotateToPosition(pos, centerPos, axis, angle * predictionFlame);
+			return Vector3.Angle(-transform.forward, to - transform.position) < limitAngle ? Quaternion.LookRotation(to - transform.position) : Quaternion.LookRotation(-transform.forward);
 		}
-
-		public override Quaternion Rotate(Vector3 to, float limitAngle = 30f)
+		/// <summary>
+		/// 目標を向くように回転する
+		/// </summary>
+		/// <returns></returns>
+		public override Quaternion Rotate()
 		{
-			Quaternion ret;
-			float angle = Vector3.Angle(transform.forward, to - transform.position);
-			if (angle < limitAngle)
-			{
-				ret = Quaternion.LookRotation(to - transform.position);
-			}
-			else
-			{
-				ret = Quaternion.LookRotation(transform.forward);
-			}
-			return ret;
+			return Quaternion.LookRotation(-transform.forward);
 		}
-        public override Quaternion Rotate()
-        {
-			return Quaternion.LookRotation(transform.forward);
-        }
-    }
+	}
 
 	// modで追加される武装modに対して
 	// シューティングモジュールではブロック名.ShootingDirectionVisual(Clone)という名前の子オブジェクトで発射方向を制御している模様
 	// ACMの場合はブロック名.AdShootingVisual(Clone) という名前の子オブジェクトで発射方向を制御している模様
+	/// <summary>
+	/// 公式モジュール製のmodブロック
+	/// </summary>
 	public class ModAddedBlocksScript : LockOnBlockScript
     {
-		public ShootingModuleBehaviour shootingModule; // 公式のシューティングモジュール
-		public List<Transform> ProjectileVis; // 弾の方向を指定するゲームオブジェクトたち
+		/// <summary>
+		/// 公式のシューティングモジュール
+		/// </summary>
+		public ShootingModuleBehaviour shootingModule;
+		/// <summary>
+		/// 弾の方向を指定するゲームオブジェクトたち
+		/// </summary>
+		public List<Transform> ProjectileVis;
 		public readonly string originalShootingModuleName = "ShootingDirectionVisual(Clone)";
 		public readonly string acmShootingModuleName = "AdShootingVisual(Clone)";
-		public List<GameObject> defaultForward; // 弾の方向の初期値
+		/// <summary>
+		/// 弾の方向の初期値
+		/// </summary>
+		public List<GameObject> defaultForward;
 		//public LineRenderer line; // デバッグ用
 
 		// 初速の計算
 		//public MSlider PowerSlider;
 		//public float power;
 
-		// ACM製かどうか
+		/// <summary>
+		/// ACM製かどうか
+		/// </summary>
 		public bool fromACM = false;
 
 		public override void SafeAwake()
@@ -1073,18 +1192,10 @@ namespace LOSpace
 			// 弾道予測
 			if (startingBlock.CurrentTarget != null) // 標的が存在する場合
 			{
-				SetTarget();
+				SetTarget(startingBlock.CurrentTarget);
 				gravity = !StatMaster.GodTools.GravityDisabled;
 
-				Vector3 predTargetPos;
-				if (TargetAngularVelo.sqrMagnitude > Mathf.Pow(0.03f, 2)) // 円形予測
-				{
-					predTargetPos = CircularPredict(Target, TargetVelo, TargetAngularVelo, initialSpeed);
-				}
-				else // 線形予測
-				{
-					predTargetPos = LinearPredict(Target, TargetVelo, initialSpeed);
-				}
+				Vector3 predTargetPos = Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, initialSpeed);
 				for (int i = 0; i < ProjectileVis.Count; i++)
 				{
 					ProjectileVis[i].rotation = Rotate(predTargetPos, defaultForward[i].transform.forward);
@@ -1100,17 +1211,22 @@ namespace LOSpace
 
 			// デバッグ用
 			//line.SetPositions(new Vector3[] { ProjectileVis[0].position, ProjectileVis[0].forward * 100f });
+
+			// 目標位置更新
+			TargetPosBefore2 = TargetPosBefore1;
+			TargetPosBefore1 = TargetPos;
+			PosBefore1 = transform.position;
 		}
         public override void SetProjectileSpawn()
         {
 			ProjectileSpawn = null;
         }
-        public override void SetInitialSpeed()
+        public void SetInitialSpeed()
         {
 			initialSpeed = 100f * shootingModule.GetSlider(shootingModule.Module.PowerSlider).Value;
 		}
-        // 弾道予測
-        public Quaternion Rotate(Vector3 to, Vector3 defaultForward, float limitAngle = 30f)
+		// 弾道予測
+		public Quaternion Rotate(Vector3 to, Vector3 defaultForward, float limitAngle = 30f)
 		{
 			Quaternion ret;
 			float angle = Vector3.Angle(defaultForward, to - transform.position);
@@ -1125,22 +1241,37 @@ namespace LOSpace
 			return ret;
 		}
 		public Quaternion Rotate(Vector3 defaultForward)
-        {
+		{
 			return Quaternion.LookRotation(defaultForward);
 		}
 	}
-
+	/// <summary>
+	/// ACM製ブロック
+	/// </summary>
 	public class AdShootingBlocksScript : LockOnBlockScript
     {
-		public List<Transform> ProjectileVis; // 弾の方向を指定するゲームオブジェクトたち
+		/// <summary>
+		/// 弾の方向を指定するゲームオブジェクトたち
+		/// </summary>
+		public List<Transform> ProjectileVis;
 		public readonly string acmShootingModuleName = "AdShootingVisual(Clone)";
-		public List<GameObject> defaultForward; // 弾の方向の初期値
+		/// <summary>
+		/// 弾の方向の初期値
+		/// </summary>
+		public List<GameObject> defaultForward;
 
-		// ミサイルとチャフなら無効化
+		/// <summary>
+		/// ミサイルかどうか（ミサイルなら無効化）
+		/// </summary>
 		public bool isMissile = false;
+		/// <summary>
+		/// チャフかどうか（チャフなら無効化）
+		/// </summary>
 		public bool isChaffLauncher = false;
 
-		// 初速の計算
+		/// <summary>
+		/// 初速の計算
+		/// </summary>
 		public XDataHolder adBlockData;
 		public float power;
 
@@ -1193,20 +1324,12 @@ namespace LOSpace
 		{
 			if (startingBlock.CurrentTarget != null)
 			{
-				SetTarget();
+				SetTarget(startingBlock.CurrentTarget);
 				gravity = !StatMaster.GodTools.GravityDisabled;
 
 				// 弾道予測
 				//var predTargetPos = Predict(Target, TargetVelo, 1f * power); // 暫定的に初速を仮定
-				Vector3 predTargetPos;
-				if (TargetAngularVelo.sqrMagnitude > Mathf.Pow(0.03f, 2)) // 円形予測
-				{
-					predTargetPos = CircularPredict(Target, TargetVelo, TargetAngularVelo, power);
-				}
-				else // 線形予測
-				{
-					predTargetPos = LinearPredict(Target, TargetVelo, power);
-				}
+				Vector3 predTargetPos = Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, initialSpeed);
 				for (int i = 0; i < ProjectileVis.Count; i++)
 				{
 					ProjectileVis[i].rotation = Rotate(predTargetPos, defaultForward[i].transform.forward);
@@ -1219,12 +1342,17 @@ namespace LOSpace
 					ProjectileVis[i].rotation = Rotate(defaultForward[i].transform.forward);
 				}
 			}
+
+			// 目標位置更新
+			TargetPosBefore2 = TargetPosBefore1;
+			TargetPosBefore1 = TargetPos;
+			PosBefore1 = transform.position;
 		}
 		public override void SetProjectileSpawn()
 		{
 			ProjectileSpawn = null;
 		}
-		public override void SetInitialSpeed()
+		public void SetInitialSpeed()
 		{
 
 			if (adBlockData.HasKey("PowerSlider"))

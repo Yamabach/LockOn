@@ -22,3 +22,27 @@ D:\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOn
 D:\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\obj\Debug\LockOnAssembly.csproj.CopyComplete
 D:\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\obj\Debug\LockOnAssembly.dll
 D:\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\obj\Debug\LockOnAssembly.pdb
+C:\Program Files (x86)\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\bin\Debug\LockOnAssembly.dll
+C:\Program Files (x86)\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\bin\Debug\LockOnAssembly.pdb
+C:\Program Files (x86)\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\bin\Debug\Assembly-CSharp.dll
+C:\Program Files (x86)\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\bin\Debug\DynamicText.dll
+C:\Program Files (x86)\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\bin\Debug\UnityEngine.dll
+C:\Program Files (x86)\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\bin\Debug\UnityEngine.UI.dll
+C:\Program Files (x86)\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\bin\Debug\Assembly-CSharp-firstpass.dll
+C:\Program Files (x86)\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\bin\Debug\mcs.dll
+C:\Program Files (x86)\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\bin\Debug\System.Threading.dll
+C:\Program Files (x86)\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\bin\Debug\Mono.Cecil.dll
+C:\Program Files (x86)\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\bin\Debug\UnityEngine.Networking.dll
+C:\Program Files (x86)\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\bin\Debug\Open.Nat.dll
+C:\Program Files (x86)\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\bin\Debug\RakNetSwig.dll
+C:\Program Files (x86)\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\bin\Debug\Ookii.Dialogs.dll
+C:\Program Files (x86)\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\bin\Debug\ch.sycoforge.Decal.dll
+C:\Program Files (x86)\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\bin\Debug\Ionic.Zip.Unity.dll
+C:\Program Files (x86)\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\bin\Debug\NATTraversalForUNET.dll
+C:\Program Files (x86)\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\bin\Debug\Newtonsoft.Json.dll
+C:\Program Files (x86)\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\bin\Debug\System.Runtime.Serialization.dll
+C:\Program Files (x86)\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\obj\Debug\LockOnAssembly.csproj.AssemblyReference.cache
+C:\Program Files (x86)\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\obj\Debug\LockOnAssembly.csproj.CoreCompileInputs.cache
+C:\Program Files (x86)\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\obj\Debug\LockOnAssembly.csproj.CopyComplete
+C:\Program Files (x86)\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\obj\Debug\LockOnAssembly.dll
+C:\Program Files (x86)\Steam\steamapps\common\Besiege\Besiege_Data\Mods\LockOnMod Project\src\LockOnAssembly\obj\Debug\LockOnAssembly.pdb
