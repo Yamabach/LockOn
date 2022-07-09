@@ -716,9 +716,19 @@ namespace LOSpace
 		/// </summary>
 		public readonly float g = 32.81f;
 		/// <summary>
-		/// ’e‚Μ‰‘¬“x
+		/// ’e‚Μ‰‘¬“xi1”{j
 		/// </summary>
-		public float initialSpeed;
+		public float InitialSpeed
+        {
+			get; set;
+        }
+		/// <summary>
+		/// ’e‚Μ‰‘¬“x”{—¦
+		/// </summary>
+		public float Power
+        {
+			get; set;
+        }
 		/// <summary>
 		/// 1ƒtƒ[ƒ€‘O‚ΜΚ’u
 		/// </summary>
@@ -746,9 +756,6 @@ namespace LOSpace
             {
 				Mod.Error("StartingBlock is null!");
             }
-
-			// ’e‚Μ‰ϊ‘¬“xέ’θ
-			SetInitialSpeed(1f);
 		}
 		public override void SimulateFixedUpdateAlways()
 		{
@@ -759,7 +766,7 @@ namespace LOSpace
 				//SetTarget(LockOnManager.Instance.DebugTargetPos, LockOnManager.Instance.DebugTargetRigid.velocity);
 				gravity = !StatMaster.GodTools.GravityDisabled;
 
-				ProjectileSpawn.rotation = Rotate(Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, initialSpeed));
+				ProjectileSpawn.rotation = Rotate(Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, InitialSpeed * Power), 30f);
 			}
             else // •W“I‚ª‘¶έ‚µ‚Θ‚Άκ‡
             {
@@ -779,13 +786,6 @@ namespace LOSpace
 			ProjectileSpawn = transform.FindChild("projective spawn");
 		}
 		/// <summary>
-		/// ’e‚Μ‰ϊ‘¬“xέ’θ
-		/// </summary>
-		public virtual void SetInitialSpeed(float spd = 1f)
-        {
-			initialSpeed = spd;
-        }
-		/// <summary>
 		/// ό`—\‘ª‚©‰~`—\‘ª‚©‚π‘I‘π‚µA–Ϊ•W‚ΜΚ’u‚π—\‘ª‚·‚ι
 		/// </summary>
 		/// <param name="targetPos">–Ϊ•WΚ’u</param>
@@ -794,7 +794,7 @@ namespace LOSpace
 		/// <param name="speed">’e‚Μ‰‘¬</param>
 		/// <param name="limitAngle">ό`‚©‰~`‚©‚π‘I‘π‚·‚ιθ‡’l 3FΤ‚Μp“x</param>
 		/// <returns></returns>
-		public Vector3 Predict(Vector3 targetPos, Vector3 targetPos1, Vector3 targetPos2, float speed = 1f, float limitAngle = 0.03f, float limitMove = 0.05f)
+		public Vector3 Predict(Vector3 targetPos, Vector3 targetPos1, Vector3 targetPos2, float speed, float limitAngle = 0.03f, float limitMove = 0.03f)
         {
 			Vector3 predTargetPos;
 			if (Mathf.Abs(Vector3.Angle(targetPos - targetPos1, targetPos1 - targetPos2)) < limitAngle && (targetPos - targetPos1).sqrMagnitude > limitMove * limitMove)
@@ -816,24 +816,47 @@ namespace LOSpace
 		/// <param name="targetPrePos">–Ϊ•W‚Μ‘¬“x</param>
 		/// <param name="speed">’e‚Μ‘¬‚³</param>
 		/// <returns></returns>
-		public virtual Vector3 LinearPredict(Vector3 targetPos, Vector3 targetPrePos, float speed = 1f) // »έ‚Μ•W“I‚ΜΚ’uA‘¬“xA’e‚Μ‘¬‚³
+		public virtual Vector3 LinearPredict(Vector3 targetPos, Vector3 targetPrePos, float speed) // »έ‚Μ•W“I‚ΜΚ’uA‘¬“xA’e‚Μ‘¬‚³
 		{
-			//Unity‚Μ•¨—‚Νm/s‚Θ‚Μ‚Εm/flame‚Ι‚·‚ι
-			speed = speed * Time.fixedDeltaTime;
-			Vector3 v3_Mv = targetPos - targetPrePos;
-			Vector3 v3_Pos = targetPos - ProjectileSpawn.position;
+			float flame2s = Time.fixedDeltaTime; // 0.01f s/frame
 
-			float A = Vector3.SqrMagnitude(v3_Mv) - speed * speed;
-			float B = Vector3.Dot(v3_Pos, v3_Mv);
-			float C = Vector3.SqrMagnitude(v3_Pos);
+			//Unity‚Μ•¨—‚Νm/s‚Θ‚Μ‚Εm/flame‚Ι‚·‚ι // m/s‚Ι‚µ‚Δ‚έ‚ι
+			speed = speed * flame2s; // m/frame
+			Vector3 v3_Mv = targetPos - targetPrePos; // m/frame
+			//Vector3 v3_Mv = (targetPos - targetPrePos) / flame2s; // m/s
+			Vector3 v3_Pos = targetPos - ProjectileSpawn.position; // m
 
-			//0„‹Φ~
-			if (A == 0 && B == 0) return targetPos;
-			if (A == 0) return targetPos + v3_Mv * (-C / B / 2);
+			float A = Vector3.SqrMagnitude(v3_Mv) - speed * speed; // m2/frame2 (m2/s2)
+			float B = Vector3.Dot(v3_Pos, v3_Mv); // m2/frame (m2/s)
+			float C = Vector3.SqrMagnitude(v3_Pos); // m2
 
-			//‹•”‰π‚Ν‚Η‚¤‚Ή“–‚½‚η‚Θ‚Ά‚Μ‚Εβ‘Ξ’l‚Ε–³‹‚µ‚½
-			float D = Mathf.Sqrt(Mathf.Abs(B * B - A * C));
-			return targetPos + v3_Mv * Utility.PlusMin((-B - D) / A, (-B + D) / A);
+            float PredictionFlame; // frame
+
+            //0„‹Φ~
+            if (A == 0f && B == 0f) PredictionFlame = 0f;
+			else if (A == 0f) PredictionFlame = (-C / B / 2);
+
+			else
+			{
+				//‹•”‰π‚Ν‚Η‚¤‚Ή“–‚½‚η‚Θ‚Ά‚Μ‚Εβ‘Ξ’l‚Ε–³‹‚µ‚½
+				float D = Mathf.Sqrt(Mathf.Abs(B * B - A * C));
+
+				// Τ
+				PredictionFlame = Utility.PlusMin((-B - D) / A, (-B + D) / A);
+				//Mod.Log($"{(-B - D) / A * flame2s}, {(-B + D) / A * flame2s}");
+			}
+			//Mod.Log((PredictionFlame * flame2s).ToString());
+			var result = targetPos + v3_Mv * PredictionFlame;
+
+			// d—Ν‚Μ—
+			// d—Ν‚Ε—‚Ώ‚ι•ª‚Ύ‚―–Ϊ•WΚ’u‚πγ‚°‚ι
+			if (gravity)
+			{
+				result.y += g * (PredictionFlame * flame2s) * (PredictionFlame * flame2s) / 2f;
+			}
+			
+
+			return result;
 		}
 		/// <summary>
 		/// ‰~`—\‘ª
@@ -843,10 +866,12 @@ namespace LOSpace
 		/// <param name="angularVelo"></param>
 		/// <param name="speed"></param>
 		/// <returns></returns>
-		public virtual Vector3 CircularPredict(Vector3 targetPos, Vector3 targetPos1, Vector3 targetPos2, float speed = 1f) // »έ‚Μ•W“I‚ΜΚ’uC‘¬“xCp‘¬“xC’e‚Μ‘¬‚³
+		public virtual Vector3 CircularPredict(Vector3 targetPos, Vector3 targetPos1, Vector3 targetPos2, float speed) // »έ‚Μ•W“I‚ΜΚ’uC‘¬“xCp‘¬“xC’e‚Μ‘¬‚³
         {
+			float flame2s = Time.fixedDeltaTime;
+
 			//Unity‚Μ•¨—‚Νm/s‚Θ‚Μ‚Εm/flame‚Ι‚·‚ι
-			speed = speed * Time.fixedDeltaTime;
+			speed = speed * flame2s;
 
 			//3“_‚©‚η‰~‚Μ’†S“_‚πo‚·
 			Vector3 CenterPosition = Utility.Circumcenter(targetPos, targetPos1, targetPos2);
@@ -869,7 +894,7 @@ namespace LOSpace
 			// d—Ν‚Ε—‚Ώ‚ι•ª‚Ύ‚―–Ϊ•WΚ’u‚πγ‚°‚ι
 			if (gravity)
 			{
-				result.y += g * PredictionFlame * PredictionFlame / 2;
+				result.y += g * (PredictionFlame * flame2s) * (PredictionFlame * flame2s) / 2f;
 			}
 
 			return result;
@@ -960,7 +985,9 @@ namespace LOSpace
 				return;
             }
 			base.SafeAwake();
-        }
+			InitialSpeed = (Cannon.shrapnel ? 1f : 1f);
+			Power = Cannon.boltSpeed;
+		}
         public override void SimulateFixedUpdateAlways()
         {
 			if (startingBlock.CurrentTarget != null)
@@ -969,10 +996,10 @@ namespace LOSpace
 				gravity = !StatMaster.GodTools.GravityDisabled;
 
 				// ’e“Ή—\‘ª
-				var predTargetPos = Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, initialSpeed);
+				var predTargetPos = Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, InitialSpeed * Power);
 				if (Cannon.shrapnel)
 				{
-					Cannon.boltSpawnRot = Rotate(predTargetPos); // gU–C‚Μ”­Λ•ϋό‚π•ΟX
+					Cannon.boltSpawnRot = Rotate(predTargetPos); // gU–C‚Μ”­Λ•ϋό‚π•ΟX // ‹t
 				}
 				else
 				{
@@ -993,10 +1020,12 @@ namespace LOSpace
         {
 			ProjectileSpawn = null;
         }
+		/*
         public void SetInitialSpeed()
         {
-			initialSpeed = Cannon.boltSpeed * (Cannon.shrapnel ? 1f : 1f);
+			InitialSpeed = Cannon.boltSpeed * (Cannon.shrapnel ? 1f : 1f);
         }
+		*/
     }
 	/// <summary>
 	/// Crossbow
@@ -1009,32 +1038,11 @@ namespace LOSpace
         public override void SafeAwake()
         {
 			//Mod.Log("Crossbow Script");
-
-			Crossbow = GetComponent<CrossBowBlock>();
-			if (Crossbow == null)
-			{
-				Mod.Error("could not get CrossbowBlock!");
-				initialSpeed = 1f;
-			}
-            else
-            {
-				// ’e‚Μ‰ϊ‘¬“xέ’θ
-				SetInitialSpeed();
-			}
-
 			base.SafeAwake();
+			Crossbow = GetComponent<CrossBowBlock>();
+			InitialSpeed = 81f;
+			Power = Crossbow.power;
 		}
-        public void SetInitialSpeed()
-        {
-			if (Crossbow.PowerSlider != null)
-			{
-				initialSpeed = Crossbow.PowerSlider.Value * 80f;
-			}
-            else
-            {
-				initialSpeed = 1f * 80f;
-            }
-        }
     }
 	/// <summary>
 	/// Flamethrower
@@ -1052,6 +1060,9 @@ namespace LOSpace
 
 			// ν‚Ιd—Ν‚Μ‰e‹Ώ‚πσ‚―‚Θ‚Ά
 			gravity = false;
+
+			InitialSpeed = 500f;
+			Power = 1f;
 		}
         public override void SimulateFixedUpdateAlways()
         {
@@ -1060,7 +1071,7 @@ namespace LOSpace
 				SetTarget(startingBlock.CurrentTarget);
 
 				// ’e“Ή—\‘ª
-				Correction = Rotate(Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, initialSpeed));
+				Correction = Rotate(Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, InitialSpeed * Power));
 			}
             else
             {
@@ -1073,10 +1084,6 @@ namespace LOSpace
 		{
 			ProjectileSpawn = transform.FindChild("FireTrigger");
 		}
-        public void SetInitialSpeed()
-        {
-			initialSpeed = 500f;
-		}
 		/// <summary>
 		/// –Ϊ•W‚πό‚­‚ζ‚¤‚Ι‰ρ“]‚·‚ι
 		/// </summary>
@@ -1085,7 +1092,7 @@ namespace LOSpace
 		/// <returns></returns>
 		public override Quaternion Rotate(Vector3 to, float limitAngle = 30f) // ³–Κ‚Μό‚«‚Ι’ΣI
 		{
-			return Vector3.Angle(-transform.forward, to - transform.position) < limitAngle ? Quaternion.LookRotation(to - transform.position) : Quaternion.LookRotation(-transform.forward);
+			return Vector3.Angle(transform.forward, to - transform.position) < limitAngle ? Quaternion.LookRotation(to - transform.position) : Quaternion.LookRotation(transform.forward);
 		}
 		/// <summary>
 		/// –Ϊ•W‚πό‚­‚ζ‚¤‚Ι‰ρ“]‚·‚ι
@@ -1093,7 +1100,7 @@ namespace LOSpace
 		/// <returns></returns>
 		public override Quaternion Rotate()
 		{
-			return Quaternion.LookRotation(-transform.forward);
+			return Quaternion.LookRotation(transform.forward);
 		}
 	}
 
@@ -1186,6 +1193,9 @@ namespace LOSpace
 			//SetInitialSpeed();
 
 			base.SafeAwake();
+
+			InitialSpeed = 100f; // b’θ
+			Power = shootingModule.GetSlider(shootingModule.Module.PowerSlider).Value;
 		}
         public override void SimulateFixedUpdateAlways()
 		{
@@ -1195,7 +1205,7 @@ namespace LOSpace
 				SetTarget(startingBlock.CurrentTarget);
 				gravity = !StatMaster.GodTools.GravityDisabled;
 
-				Vector3 predTargetPos = Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, initialSpeed);
+				Vector3 predTargetPos = Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, InitialSpeed * Power);
 				for (int i = 0; i < ProjectileVis.Count; i++)
 				{
 					ProjectileVis[i].rotation = Rotate(predTargetPos, defaultForward[i].transform.forward);
@@ -1221,10 +1231,6 @@ namespace LOSpace
         {
 			ProjectileSpawn = null;
         }
-        public void SetInitialSpeed()
-        {
-			initialSpeed = 100f * shootingModule.GetSlider(shootingModule.Module.PowerSlider).Value;
-		}
 		// ’e“Ή—\‘ª
 		public Quaternion Rotate(Vector3 to, Vector3 defaultForward, float limitAngle = 30f)
 		{
@@ -1319,6 +1325,9 @@ namespace LOSpace
 			}
 
 			base.SafeAwake();
+
+			InitialSpeed = 100f; // b’θ
+			Power = adBlockData.HasKey("PowerSlider") ? adBlockData.ReadFloat("PowerSlider") : 0f;
 		}
 		public override void SimulateFixedUpdateAlways()
 		{
@@ -1329,7 +1338,7 @@ namespace LOSpace
 
 				// ’e“Ή—\‘ª
 				//var predTargetPos = Predict(Target, TargetVelo, 1f * power); // b’θ“I‚Ι‰‘¬‚π‰Ό’θ
-				Vector3 predTargetPos = Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, initialSpeed);
+				Vector3 predTargetPos = Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, InitialSpeed * Power);
 				for (int i = 0; i < ProjectileVis.Count; i++)
 				{
 					ProjectileVis[i].rotation = Rotate(predTargetPos, defaultForward[i].transform.forward);
@@ -1351,19 +1360,6 @@ namespace LOSpace
 		public override void SetProjectileSpawn()
 		{
 			ProjectileSpawn = null;
-		}
-		public void SetInitialSpeed()
-		{
-
-			if (adBlockData.HasKey("PowerSlider"))
-			{
-				power = 100f * adBlockData.ReadFloat("PowerSlider");
-				Mod.Log("power = " + power);
-			}
-            else
-            {
-				power = 0f;
-            }
 		}
 		// ’e“Ή—\‘ª
 		public Quaternion Rotate(Vector3 to, Vector3 defaultForward, float limitAngle = 30f)
