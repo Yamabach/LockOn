@@ -52,7 +52,7 @@ namespace LOSpace
         {
             foreach (XmlBlock b in AcmBlocks)
             {
-                Mod.Log($"name={b.Name}, id={b}, mass={b.Mass}");
+                Mod.Log($"name={b.Name}, id={b}, mass={b.Mass}, gravity={b.Gravity}");
             }
         }
         /// <summary>
@@ -89,6 +89,8 @@ namespace LOSpace
         public string LocalId { get; set; }
         [XmlElement("projectile_mass")]
         public float Mass { get; set; }
+        [XmlElement("gravity")]
+        public bool Gravity { get; set; }
 
         public override string ToString()
         {

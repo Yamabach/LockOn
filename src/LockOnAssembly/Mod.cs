@@ -739,6 +739,16 @@ namespace LOSpace
 		/// 1フレーム前の位置
 		/// </summary>
 		public Vector3 PosBefore1 = Vector3.zero;
+		/// <summary>
+		/// このブロックの速度
+		/// </summary>
+		public Vector3 Velocity
+		{
+			get
+			{
+				return (transform.position - PosBefore1) / Time.fixedDeltaTime;
+			}
+		}
 
 		/// <summary>
 		/// スタブロ
@@ -826,11 +836,11 @@ namespace LOSpace
 		{
 			float flame2s = Time.fixedDeltaTime; // 0.01f s/frame
 
-			//Unityの物理はm/sなのでm/flameにする // m/sにしてみる
+			//Unityの物理はm/sなのでm/flameにする
 			speed = speed * flame2s; // m/frame
 			Vector3 v3_Mv = targetPos - targetPrePos; // m/frame
-			//Vector3 v3_Mv = (targetPos - targetPrePos) / flame2s; // m/s
-			Vector3 v3_Pos = targetPos - ProjectileSpawn.position; // m
+			//Vector3 v3_Mv = (targetPos - targetPrePos) / flame2s;
+			Vector3 v3_Pos = targetPos - ProjectileSpawn.position;
 
 			float A = Vector3.SqrMagnitude(v3_Mv) - speed * speed; // m2/frame2 (m2/s2)
 			float B = Vector3.Dot(v3_Pos, v3_Mv); // m2/frame (m2/s)
@@ -858,9 +868,11 @@ namespace LOSpace
 			// 重力で落ちる分だけ目標位置を上げる
 			if (gravity)
 			{
-				result.y += g * (PredictionFlame * flame2s) * (PredictionFlame * flame2s) / 2f;
+				result.y += g * (PredictionFlame * flame2s) * (PredictionFlame * flame2s) / 2f; // 応急的に重みを下げる
 			}
-			
+
+			// ブロックの速度の分だけ補正
+			result -= Velocity * PredictionFlame * flame2s;
 
 			return result;
 		}
@@ -900,8 +912,11 @@ namespace LOSpace
 			// 重力で落ちる分だけ目標位置を上げる
 			if (gravity)
 			{
-				result.y += g * (PredictionFlame * flame2s) * (PredictionFlame * flame2s) / 2f;
+				result.y += g * (PredictionFlame * flame2s) * (PredictionFlame * flame2s) / 2f; // 応急的に重みを下げる
 			}
+
+			// ブロックの速度の分だけ補正
+			result -= Velocity * PredictionFlame * flame2s;
 
 			return result;
 		}
@@ -914,7 +929,7 @@ namespace LOSpace
 		/// <returns></returns>
 		public virtual Quaternion Rotate(Vector3 to, Vector3 defaultRot, float limitAngle = 30f) // 正面の向きに注意！
 		{
-			return Vector3.Angle(defaultRot, to - transform.position) < limitAngle ? Quaternion.LookRotation(to - transform.position) : Quaternion.LookRotation(defaultRot);
+			return Vector3.Angle(defaultRot, to - ProjectileSpawn.position) < limitAngle ? Quaternion.LookRotation(to - ProjectileSpawn.position) : Quaternion.LookRotation(defaultRot);
 		}
 		/// <summary>
 		/// 目標を向くように回転する
@@ -994,6 +1009,7 @@ namespace LOSpace
 			base.SafeAwake();
 			InitialSpeed = (Cannon.shrapnel ? 1f : 1f);
 			Power = Cannon.boltSpeed;
+			ProjectileSpawn = Cannon.boltObject;
 		}
         public override void SimulateFixedUpdateAlways()
         {
@@ -1011,11 +1027,12 @@ namespace LOSpace
 				else
 				{
 					// Cannonである場合の挙動
+					Cannon.boltSpawnRot = Rotate(predTargetPos, -transform.up); // 拡散砲の発射方向を変更 // 逆
 				}
 			}
             else
             {
-				Cannon.boltSpawnRot = Rotate(-transform.up);
+				Cannon.boltObject.rotation = Rotate(-transform.up);
             }
 
 			// 目標位置更新
@@ -1047,7 +1064,7 @@ namespace LOSpace
 			//Mod.Log("Crossbow Script");
 			base.SafeAwake();
 			Crossbow = GetComponent<CrossBowBlock>();
-			InitialSpeed = 81f;
+			InitialSpeed = 78f;
 			Power = Crossbow.power;
 		}
     }
@@ -1241,6 +1258,10 @@ namespace LOSpace
 		/// 弾の方向の初期値
 		/// </summary>
 		public List<GameObject> defaultForward;
+		/// <summary>
+		/// xmlデータ
+		/// </summary>
+		XmlBlock xmlBlock;
 
 		/// <summary>
 		/// ミサイルかどうか（ミサイルなら無効化）
@@ -1255,19 +1276,19 @@ namespace LOSpace
 		/// 初速の計算
 		/// </summary>
 		public XDataHolder adBlockData; // びみょい
-		public AdShootingBehaviour adShootingProp;
+		//public AdShootingBehaviour adShootingProp;
 
 		public override void SafeAwake()
 		{
 			// XMLから情報を取得 ミサイルかチャフなら何もしない
 			adBlockData = BlockInfo.FromBlockBehaviour(BB).BlockData;
-			if (adBlockData.HasKey("isChaff"))
+			if (adBlockData.HasKey("bmt-isChaff"))
 			{
-				isChaffLauncher = adBlockData.ReadBool("isChaff");
+				isChaffLauncher = adBlockData.ReadBool("bmt-isChaff");
 			}
-			if (adBlockData.HasKey("useBeacon"))
+			if (adBlockData.HasKey("bmt-useBeacon"))
 			{
-				isMissile = adBlockData.ReadBool("useBeacon");
+				isMissile = adBlockData.ReadBool("bmt-useBeacon");
 			}
 
 			// 弾の発射方向を表すゲームオブジェクトを取得
@@ -1304,11 +1325,9 @@ namespace LOSpace
 
 			foreach (XData x in adBlockData.ReadAll())
             {
-				//Mod.Log(x.Key);
+				Mod.Log(x.Key);
             }
 
-			//InitialSpeed = 300f; //adBlockData.HasKey("ShootingState/Mass") ? 1f / adBlockData.ReadFloat("ShootingState/Mass") : 1f;
-			XmlBlock xmlBlock;
 			if (Mod.AcmConfig.Find(name, out xmlBlock))
             {
 				InitialSpeed = 1f / xmlBlock.Mass;
@@ -1326,7 +1345,7 @@ namespace LOSpace
 			if (startingBlock.CurrentTarget != null)
 			{
 				SetTarget(startingBlock.CurrentTarget);
-				gravity = !StatMaster.GodTools.GravityDisabled;
+				gravity = !StatMaster.GodTools.GravityDisabled && xmlBlock.Gravity;
 
 				// 弾道予測
 				//var predTargetPos = Predict(Target, TargetVelo, 1f * power); // 暫定的に初速を仮定

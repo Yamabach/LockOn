@@ -5,46 +5,55 @@
 			<guid>0000000000000000</guid>
 			<local_id>1</local_id>
 			<projectile_mass>1</projectile_mass>
+			<gravity>true</gravity>
 		</block>
 		<block name="bullet001a">
 			<guid>0e746ba8-7cbe-4afd-95b6-a9f67e814f7e</guid>
 			<local_id>10</local_id>
 			<projectile_mass>0.40</projectile_mass>
+			<gravity>true</gravity>
 		</block>
 		<block name="bullet001a-v">
 			<guid>0e746ba8-7cbe-4afd-95b6-a9f67e814f7e</guid>
 			<local_id>11</local_id>
 			<projectile_mass>0.40</projectile_mass>
+			<gravity>true</gravity>
 		</block>
 		<block name="bullet002a">
 			<guid>0e746ba8-7cbe-4afd-95b6-a9f67e814f7e</guid>
 			<local_id>15</local_id>
 			<projectile_mass>1.0</projectile_mass>
+			<gravity>true</gravity>
 		</block>
 		<block name="bullet002a-v">
 			<guid>0e746ba8-7cbe-4afd-95b6-a9f67e814f7e</guid>
 			<local_id>16</local_id>
 			<projectile_mass>1.0</projectile_mass>
+			<gravity>true</gravity>
 		</block>
 		<block name="laser001">
 			<guid>15259577-bd19-4397-8646-88d235cf8d24</guid>
 			<local_id>10</local_id>
 			<projectile_mass>0.10</projectile_mass>
+			<gravity>false</gravity>
 		</block>
 		<block name="laser001v">
 			<guid>15259577-bd19-4397-8646-88d235cf8d24</guid>
 			<local_id>15</local_id>
 			<projectile_mass>0.10</projectile_mass>
+			<gravity>false</gravity>
 		</block>
 		<block name="laser002">
 			<guid>15259577-bd19-4397-8646-88d235cf8d24</guid>
 			<local_id>11</local_id>
 			<projectile_mass>0.20</projectile_mass>
+			<gravity>false</gravity>
 		</block>
 		<block name="laser002v">
 			<guid>15259577-bd19-4397-8646-88d235cf8d24</guid>
 			<local_id>16</local_id>
 			<projectile_mass>0.20</projectile_mass>
+			<gravity>false</gravity>
 		</block>
 	</blocks>
 </data>
