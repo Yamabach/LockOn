@@ -46,6 +46,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AcmProjectile.cs" />
     <Compile Include="Mod.cs" />
     <Compile Include="Utility.cs" />
     <Compile Include="XmlSerialization.cs" />

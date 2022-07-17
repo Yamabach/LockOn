@@ -207,4 +207,19 @@ namespace LOSpace
 			};
         }
     }
+
+	public class AdShootingBehaviour : BlockModuleBehaviour<AdShootingProp>
+    {
+		public float projectileMass;
+
+        public override void SafeAwake()
+        {
+			Mod.Log("AdShootingBehaviour safeawake");
+			base.SafeAwake();
+
+			// 値を取得
+			projectileMass = (Module.Shootingstateinfo.Mass);
+			Mod.Log(projectileMass.ToString());
+        }
+    }
 }

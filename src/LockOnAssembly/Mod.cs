@@ -20,6 +20,10 @@ namespace LOSpace
 		/// ACMがロードされているかどうか
 		/// </summary>
 		public static bool ACMLoaded;
+		/// <summary>
+		/// ACM武装のデータ
+		/// </summary>
+		public static XmlData AcmConfig;
 
 		public override void OnLoad()
 		{
@@ -29,6 +33,8 @@ namespace LOSpace
 			LockOnManager.Instance.transform.parent = mod.transform;
 			UnityEngine.Object.DontDestroyOnLoad(mod);
 			ACMLoaded = Mods.IsModLoaded(new Guid("A033CF51-D84F-45DE-B9A9-DEF1ED9A6075"));
+			AcmConfig = XMLDeserializer.Deserialize();
+			//AcmConfig.LogList(); // デバッグ用
 		}
 		/// <summary>
 		/// mod専用ログ関数
@@ -714,7 +720,7 @@ namespace LOSpace
 		/// <summary>
 		///  重力加速度 32.81m/s2
 		/// </summary>
-		public readonly float g = 32.81f;
+		public readonly float g = Physics.gravity.magnitude;
 		/// <summary>
 		/// 弾の初速度（1倍）
 		/// </summary>
@@ -766,11 +772,11 @@ namespace LOSpace
 				//SetTarget(LockOnManager.Instance.DebugTargetPos, LockOnManager.Instance.DebugTargetRigid.velocity);
 				gravity = !StatMaster.GodTools.GravityDisabled;
 
-				ProjectileSpawn.rotation = Rotate(Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, InitialSpeed * Power), 30f);
+				ProjectileSpawn.rotation = Rotate(Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, InitialSpeed * Power), -transform.up, 30f);
 			}
             else // 標的が存在しない場合
             {
-				ProjectileSpawn.rotation = Rotate();
+				ProjectileSpawn.rotation = Rotate(-transform.up);
             }
 
 			// 目標位置更新
@@ -903,19 +909,20 @@ namespace LOSpace
 		/// 目標を向くように回転する
 		/// </summary>
 		/// <param name="to">目標位置</param>
+		/// <param name="defaultRot">無効な場合の向き</param>
 		/// <param name="limitAngle">回転可能な上限角度</param>
 		/// <returns></returns>
-		public virtual Quaternion Rotate(Vector3 to, float limitAngle = 30f) // 正面の向きに注意！
+		public virtual Quaternion Rotate(Vector3 to, Vector3 defaultRot, float limitAngle = 30f) // 正面の向きに注意！
 		{
-			return Vector3.Angle(-transform.up, to - transform.position) < limitAngle ? Quaternion.LookRotation(to - transform.position) : Quaternion.LookRotation(-transform.up);
+			return Vector3.Angle(defaultRot, to - transform.position) < limitAngle ? Quaternion.LookRotation(to - transform.position) : Quaternion.LookRotation(defaultRot);
 		}
 		/// <summary>
 		/// 目標を向くように回転する
 		/// </summary>
 		/// <returns></returns>
-		public virtual Quaternion Rotate()
+		public virtual Quaternion Rotate(Vector3 defaultRot)
         {
-			return Quaternion.LookRotation(-transform.up);
+			return Quaternion.LookRotation(defaultRot);
         }
 		/// <summary>
 		/// 目標を定める
@@ -999,7 +1006,7 @@ namespace LOSpace
 				var predTargetPos = Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, InitialSpeed * Power);
 				if (Cannon.shrapnel)
 				{
-					Cannon.boltSpawnRot = Rotate(predTargetPos); // 拡散砲の発射方向を変更 // 逆
+					Cannon.boltSpawnRot = Rotate(predTargetPos, -transform.up); // 拡散砲の発射方向を変更 // 逆
 				}
 				else
 				{
@@ -1008,7 +1015,7 @@ namespace LOSpace
 			}
             else
             {
-				Cannon.boltSpawnRot = Rotate();
+				Cannon.boltSpawnRot = Rotate(-transform.up);
             }
 
 			// 目標位置更新
@@ -1049,7 +1056,10 @@ namespace LOSpace
 	/// </summary>
 	public class FlamethrowerScript : LockOnBlockScript
     {
-		public Transform Fire; // 火のエフェクト
+		/// <summary>
+		/// 火のエフェクト
+		/// </summary>
+		public Transform Fire;
 		//public LineRenderer line; // デバッグ用
 		public override void SafeAwake()
         {
@@ -1071,11 +1081,11 @@ namespace LOSpace
 				SetTarget(startingBlock.CurrentTarget);
 
 				// 弾道予測
-				Correction = Rotate(Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, InitialSpeed * Power));
+				Correction = Rotate(Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, InitialSpeed * Power), transform.forward);
 			}
             else
             {
-				Correction = Rotate();
+				Correction = Rotate(transform.forward);
 			}
 			Fire.rotation = Correction;
 			ProjectileSpawn.rotation = Correction;
@@ -1083,24 +1093,6 @@ namespace LOSpace
 		public override void SetProjectileSpawn()
 		{
 			ProjectileSpawn = transform.FindChild("FireTrigger");
-		}
-		/// <summary>
-		/// 目標を向くように回転する
-		/// </summary>
-		/// <param name="to">目標位置</param>
-		/// <param name="limitAngle">回転可能な上限角度</param>
-		/// <returns></returns>
-		public override Quaternion Rotate(Vector3 to, float limitAngle = 30f) // 正面の向きに注意！
-		{
-			return Vector3.Angle(transform.forward, to - transform.position) < limitAngle ? Quaternion.LookRotation(to - transform.position) : Quaternion.LookRotation(transform.forward);
-		}
-		/// <summary>
-		/// 目標を向くように回転する
-		/// </summary>
-		/// <returns></returns>
-		public override Quaternion Rotate()
-		{
-			return Quaternion.LookRotation(transform.forward);
 		}
 	}
 
@@ -1194,8 +1186,9 @@ namespace LOSpace
 
 			base.SafeAwake();
 
-			InitialSpeed = 100f; // 暫定
-			Power = shootingModule.GetSlider(shootingModule.Module.PowerSlider).Value;
+			// v = f * 1 / m
+			InitialSpeed = 1f / shootingModule.Module.ProjectileInfo.Mass; // 1 / m
+			Power = shootingModule.GetSlider(shootingModule.Module.PowerSlider).Value; // f
 		}
         public override void SimulateFixedUpdateAlways()
 		{
@@ -1208,6 +1201,7 @@ namespace LOSpace
 				Vector3 predTargetPos = Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, InitialSpeed * Power);
 				for (int i = 0; i < ProjectileVis.Count; i++)
 				{
+					ProjectileSpawn = ProjectileVis[i];
 					ProjectileVis[i].rotation = Rotate(predTargetPos, defaultForward[i].transform.forward);
 				}
 			}
@@ -1215,6 +1209,7 @@ namespace LOSpace
 			{
 				for (int i = 0; i < ProjectileVis.Count; i++)
 				{
+					ProjectileSpawn = ProjectileVis[i];
 					ProjectileVis[i].rotation = Rotate(defaultForward[i].transform.forward);
 				}
 			}
@@ -1231,25 +1226,6 @@ namespace LOSpace
         {
 			ProjectileSpawn = null;
         }
-		// 弾道予測
-		public Quaternion Rotate(Vector3 to, Vector3 defaultForward, float limitAngle = 30f)
-		{
-			Quaternion ret;
-			float angle = Vector3.Angle(defaultForward, to - transform.position);
-			if (angle < limitAngle)
-			{
-				ret = Quaternion.LookRotation(to - transform.position);
-			}
-			else
-			{
-				ret = Quaternion.LookRotation(defaultForward);
-			}
-			return ret;
-		}
-		public Quaternion Rotate(Vector3 defaultForward)
-		{
-			return Quaternion.LookRotation(defaultForward);
-		}
 	}
 	/// <summary>
 	/// ACM製ブロック
@@ -1278,8 +1254,8 @@ namespace LOSpace
 		/// <summary>
 		/// 初速の計算
 		/// </summary>
-		public XDataHolder adBlockData;
-		public float power;
+		public XDataHolder adBlockData; // びみょい
+		public AdShootingBehaviour adShootingProp;
 
 		public override void SafeAwake()
 		{
@@ -1326,8 +1302,24 @@ namespace LOSpace
 
 			base.SafeAwake();
 
-			InitialSpeed = 100f; // 暫定
-			Power = adBlockData.HasKey("PowerSlider") ? adBlockData.ReadFloat("PowerSlider") : 0f;
+			foreach (XData x in adBlockData.ReadAll())
+            {
+				//Mod.Log(x.Key);
+            }
+
+			//InitialSpeed = 300f; //adBlockData.HasKey("ShootingState/Mass") ? 1f / adBlockData.ReadFloat("ShootingState/Mass") : 1f;
+			XmlBlock xmlBlock;
+			if (Mod.AcmConfig.Find(name, out xmlBlock))
+            {
+				InitialSpeed = 1f / xmlBlock.Mass;
+            }
+            else
+            {
+				Mod.Warning($"{name} does not exist in AcmProjectileMass.xml!");
+				InitialSpeed = 1f;
+            }
+			//InitialSpeed = Mod.AcmConfig.Find(name, out xmlBlock) ? 1f / xmlBlock.Mass : 1f / Mod.AcmConfig.AcmBlocks[0].Mass;
+			Power = adBlockData.HasKey("bmt-power") ? adBlockData.ReadFloat("bmt-power") : 1f;
 		}
 		public override void SimulateFixedUpdateAlways()
 		{
@@ -1341,6 +1333,7 @@ namespace LOSpace
 				Vector3 predTargetPos = Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, InitialSpeed * Power);
 				for (int i = 0; i < ProjectileVis.Count; i++)
 				{
+					ProjectileSpawn = ProjectileVis[i];
 					ProjectileVis[i].rotation = Rotate(predTargetPos, defaultForward[i].transform.forward);
 				}
 			}
@@ -1348,6 +1341,7 @@ namespace LOSpace
 			{
 				for (int i = 0; i < ProjectileVis.Count; i++)
 				{
+					ProjectileSpawn = ProjectileVis[i];
 					ProjectileVis[i].rotation = Rotate(defaultForward[i].transform.forward);
 				}
 			}
@@ -1360,25 +1354,6 @@ namespace LOSpace
 		public override void SetProjectileSpawn()
 		{
 			ProjectileSpawn = null;
-		}
-		// 弾道予測
-		public Quaternion Rotate(Vector3 to, Vector3 defaultForward, float limitAngle = 30f)
-		{
-			Quaternion ret;
-			float angle = Vector3.Angle(defaultForward, to - transform.position);
-			if (angle < limitAngle)
-			{
-				ret = Quaternion.LookRotation(to - transform.position);
-			}
-			else
-			{
-				ret = Quaternion.LookRotation(defaultForward);
-			}
-			return ret;
-		}
-		public Quaternion Rotate(Vector3 defaultForward)
-		{
-			return Quaternion.LookRotation(defaultForward);
 		}
 	}
 
