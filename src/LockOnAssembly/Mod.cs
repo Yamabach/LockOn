@@ -350,7 +350,6 @@ namespace LOSpace
 		/// オートエイムを有効化するかどうか
 		/// </summary>
 		public MKey Activate;
-
 		public bool IsActivated
         {
 			private set; get;
@@ -465,13 +464,6 @@ namespace LOSpace
         {
 			SetTargetCandidates();
 
-			// トグルが有効でない場合は何もしない
-			if (!IsActivated)
-            {
-				ChangeTarget(null);
-				return;
-            }
-
 			// 敵がいない場合はデバッグ用ボールをターゲットにする
 			if (TargetCandidates == null)
             {
@@ -480,7 +472,18 @@ namespace LOSpace
 			else if (TargetCandidates.Count == 0)
             {
 				ChangeTarget(null);
-            }
+			}
+
+			// トグルが有効でない場合は何もしない
+			if (!IsActivated)
+			{
+				ChangeTarget(null);
+				foreach (Enemy e in TargetCandidates)
+                {
+					e.Gauge = 0f;
+                }
+				return;
+			}
 
 			// カメラ中央にいる時間に応じてリスト内の敵にゲージを溜める
 			// カメラの外に出た敵のゲージは0になる
