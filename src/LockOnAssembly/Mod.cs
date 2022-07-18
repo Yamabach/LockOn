@@ -347,6 +347,16 @@ namespace LOSpace
 		public int playerId;
 
 		/// <summary>
+		/// オートエイムを有効化するかどうか
+		/// </summary>
+		public MKey Activate;
+
+		public bool IsActivated
+        {
+			private set; get;
+        }
+
+		/// <summary>
 		/// 敵候補
 		/// </summary>
 		public List<Enemy> TargetCandidates;
@@ -376,6 +386,7 @@ namespace LOSpace
 
         public override void SafeAwake()
         {
+			base.SafeAwake();
 			// サーバーID取得
 			playerId = BB.ParentMachine.PlayerID;
 
@@ -438,10 +449,28 @@ namespace LOSpace
 			tex2.SetPixel(0, 0, new Color(0, 1, 0, 0.3f));
 			tex2.Apply();
 			debugTextureGreen = tex2;
+
+			// UI設定
+			Activate = BB.AddKey("Auto Aim", "auto-aim", KeyCode.L);
 		}
-		public override void SimulateFixedUpdateAlways()
+        public override void SimulateUpdateAlways()
+		{
+			// トグル化
+			if (Activate.IsPressed || Activate.EmulationPressed())
+			{
+				IsActivated = !IsActivated;
+			}
+		}
+        public override void SimulateFixedUpdateAlways()
         {
 			SetTargetCandidates();
+
+			// トグルが有効でない場合は何もしない
+			if (!IsActivated)
+            {
+				ChangeTarget(null);
+				return;
+            }
 
 			// 敵がいない場合はデバッグ用ボールをターゲットにする
 			if (TargetCandidates == null)
@@ -458,7 +487,7 @@ namespace LOSpace
 			foreach (Enemy e in TargetCandidates)
             {
 				var screenPos = RectTransformUtility.WorldToScreenPoint(mainCamera, e.Target.transform.position);
-				// とりあえず画面内に入ったことを想定
+				// とりあえず画面内に入ったことを想定 地形の奥にいる状態でロックオンを外すようにはしたい
 				if (0 < screenPos.x && screenPos.x < screenSize.x && 0 < screenPos.y && screenPos.y < screenSize.y)
                 {
 					// 1秒くらいでロックオンできるようにする
@@ -516,6 +545,12 @@ namespace LOSpace
 
 			// シミュ中のみ
 			if (!BB.isSimulating)
+            {
+				return;
+            }
+
+			// 有効時のみ
+			if (!IsActivated)
             {
 				return;
             }
@@ -749,6 +784,10 @@ namespace LOSpace
 				return (transform.position - PosBefore1) / Time.fixedDeltaTime;
 			}
 		}
+		/// <summary>
+		/// このブロックにロックオンモードを適用するかどうか
+		/// </summary>
+		public MToggle Apply;
 
 		/// <summary>
 		/// スタブロ
@@ -757,6 +796,7 @@ namespace LOSpace
 
 		public override void SafeAwake()
 		{
+			base.SafeAwake();
 			// 弾の初期姿勢を取得
 			SetProjectileSpawn();
 
@@ -772,11 +812,14 @@ namespace LOSpace
             {
 				Mod.Error("StartingBlock is null!");
             }
+
+			// UI設定
+			Apply = BB.AddToggle("Apply Auto Aim", "apply", true);
 		}
 		public override void SimulateFixedUpdateAlways()
 		{
 			// 弾道予測
-			if (startingBlock.CurrentTarget != null) // 標的が存在する場合
+			if (startingBlock.CurrentTarget != null && Apply.IsActive) // 標的が存在する場合 かつ オートエイムが適用されている場合
 			{
 				SetTarget(startingBlock.CurrentTarget);
 				//SetTarget(LockOnManager.Instance.DebugTargetPos, LockOnManager.Instance.DebugTargetRigid.velocity);
@@ -1064,7 +1107,7 @@ namespace LOSpace
 			//Mod.Log("Crossbow Script");
 			base.SafeAwake();
 			Crossbow = GetComponent<CrossBowBlock>();
-			InitialSpeed = 78f;
+			InitialSpeed = 75f;
 			Power = Crossbow.power;
 		}
     }

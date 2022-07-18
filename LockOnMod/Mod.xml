@@ -12,17 +12,17 @@
 	<Version>0.0.1</Version>
 	
 	<Description>
-You cannot avoid cannon ball!
+You cannot avoid!
 	</Description>
 	
 	<!-- Square icon of the mod. Texture defined in the Resources section.
 		 This is displayed in the mod list and, if WorkshopThumbnail is not set, used as thumbnail when uploaded to the Steam workshop. -->
-	<!-- <Icon name="icon" /> -->
+	<Icon name="thumbnail" />
 	
 	<!-- Texture resource used as thumbnail when uploading the mod to the workshop.
 		 If this is not present, the Icon texture is used instead.
 		 This can be set to have different icons in the mod list and the workshop. -->
-	<!-- <WorkshopThumbnail name="thumbnail" /> -->
+	<WorkshopThumbnail name="thumbnail" />
 	
 	<!-- Enables reloading of various values at runtime. This is normally triggered automatically when a file is changed,
 		 you can also trigger it by pressing Ctrl+H.
@@ -79,8 +79,6 @@ You cannot avoid cannon ball!
 		 BlockScripts for your blocks (if any) will be searched for in these assemblies.
 		 The path attribute is relative to the location of this file. -->
 	<Assemblies>
-		<!-- <Assembly path="SomeAssembly.dll" /> -->
-		<!-- <ScriptAssembly path="SomeAssembly/" /> -->
 		<Assembly path="LockOnAssembly.dll" />
 	</Assemblies>
 	
@@ -121,8 +119,9 @@ You cannot avoid cannon ball!
 	<Resources>
 		<!-- <Mesh name="some-mesh-name" path="some_mesh_file.obj" /> -->
 		<!-- <Texture name="some-texture-name" path="some_texture_file.png" /> -->
-    <Texture name="marker-green" path="marker-green.png" />
-    <Texture name="marker_progress_green" path="marker_progress_green.png" />
+		<Texture name="thumbnail" path="Thmbnail.png"/>
+		<Texture name="marker-green" path="marker-green.png" />
+		<Texture name="marker_progress_green" path="marker_progress_green.png" />
 	</Resources>
 
 
