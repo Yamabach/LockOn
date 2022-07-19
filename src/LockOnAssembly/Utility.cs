@@ -4,6 +4,18 @@ using UnityEngine;
 namespace LOSpace{
 	public static class Utility
 	{
+		/// <summary>
+		/// 上下で挟む
+		/// </summary>
+		/// <param name="min"></param>
+		/// <param name="value"></param>
+		/// <param name="max"></param>
+		/// <returns></returns>
+		public static float Clamp(float min, float value, float max)
+        {
+			return Mathf.Max(Mathf.Min(value, max), min);
+        }
+
 		// プラスの最小値を返す（両方マイナスなら0）
 		public static float PlusMin(float a, float b)
 		{

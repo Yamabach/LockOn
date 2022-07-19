@@ -433,8 +433,8 @@ namespace LOSpace
 			screenSize = new Vector2(Screen.width, Screen.height);
 
 			// 敵をリストに格納する
-			TargetCandidates = new List<Enemy>();
 			//SetTargetCandidates();
+			TargetCandidates = new List<Enemy>();
 
 			// テクスチャのロード
 			markerTexture = ModTexture.GetTexture("marker-green").Texture;
@@ -508,7 +508,13 @@ namespace LOSpace
 			Enemy mostNearestEnemy = null;
 			foreach (Enemy e in TargetCandidates)
             {
-				if (!e.LockOn) continue; // ゲージが溜まっていなければ何もしない
+				//if (!e.LockOn) continue; // ゲージが溜まっていなければ何もしない
+
+				if (e.Gauge < 1f)
+                {
+					continue;
+                }
+
 				var sqrDistance = Vector3.SqrMagnitude(e.Target.transform.position - transform.position);
 				if (sqrDistance < minSqrDistance)
                 {
@@ -602,6 +608,10 @@ namespace LOSpace
                 {
 					continue;
                 }
+				if (e.Target == null)
+                {
+					continue;
+                }
 				var tex = e.LockOn ? debugTextureRed : debugTextureGreen;
 				Rect targetPos;
 				var z = ScreenPoint(e.Target, new Vector2(50, 50), out targetPos);
@@ -661,7 +671,6 @@ namespace LOSpace
         }
 		/// <summary>
 		/// 目標の画面上における位置
-		/// point.zを返り値にしてRectをoutにした方が良さそう
 		/// </summary>
 		/// <param name="target">目標</param>
 		/// <param name="scale">画面サイズ</param>
@@ -702,9 +711,7 @@ namespace LOSpace
 			{
 				set
 				{
-					if (value < 0) { value = 0f; }
-					else if (1f < value) { value = 1f; }
-					gauge = value;
+					gauge = Utility.Clamp(0f, value, 1f);
 				}
                 get
                 {
@@ -1310,33 +1317,12 @@ namespace LOSpace
 		XmlBlock xmlBlock;
 
 		/// <summary>
-		/// ミサイルかどうか（ミサイルなら無効化）
-		/// </summary>
-		public bool isMissile = false;
-		/// <summary>
-		/// チャフかどうか（チャフなら無効化）
-		/// </summary>
-		public bool isChaffLauncher = false;
-
-		/// <summary>
 		/// 初速の計算
 		/// </summary>
-		public XDataHolder adBlockData; // びみょい
-		//public AdShootingBehaviour adShootingProp;
+		public XDataHolder adBlockData;
 
 		public override void SafeAwake()
 		{
-			// XMLから情報を取得 ミサイルかチャフなら何もしない
-			adBlockData = BlockInfo.FromBlockBehaviour(BB).BlockData;
-			if (adBlockData.HasKey("bmt-isChaff"))
-			{
-				isChaffLauncher = adBlockData.ReadBool("bmt-isChaff");
-			}
-			if (adBlockData.HasKey("bmt-useBeacon"))
-			{
-				isMissile = adBlockData.ReadBool("bmt-useBeacon");
-			}
-
 			// 弾の発射方向を表すゲームオブジェクトを取得
 			ProjectileVis = new List<Transform>();
 			foreach (Transform child in transform)
@@ -1361,18 +1347,14 @@ namespace LOSpace
 				}
 			}
 
-			// ミサイル，チャフ，非砲系ならオフにする
-			if (isMissile || isChaffLauncher || ProjectileVis.Count == 0)
-			{
-				enabled = false;
-			}
-
 			base.SafeAwake();
 
+			/*
 			foreach (XData x in adBlockData.ReadAll())
             {
 				Mod.Log(x.Key);
             }
+			*/
 
 			if (Mod.AcmConfig.Find(name, out xmlBlock))
             {
@@ -1380,10 +1362,14 @@ namespace LOSpace
             }
             else
             {
-				Mod.Warning($"{name} does not exist in AcmProjectileMass.xml!");
+				Mod.Warning($"{name} does not exist in AcmProjectileMass.xml! disabled itself");
 				InitialSpeed = 1f;
-            }
-			//InitialSpeed = Mod.AcmConfig.Find(name, out xmlBlock) ? 1f / xmlBlock.Mass : 1f / Mod.AcmConfig.AcmBlocks[0].Mass;
+				enabled = false;
+				return;
+			}
+
+			// blockのXMLから情報を取得
+			adBlockData = BlockInfo.FromBlockBehaviour(BB).BlockData;
 			Power = adBlockData.HasKey("bmt-power") ? adBlockData.ReadFloat("bmt-power") : 1f;
 		}
 		public override void SimulateFixedUpdateAlways()
@@ -1730,7 +1716,17 @@ namespace LOSpace
 			TargetList = new List<StartingBlockScript>();
 			foreach (PlayerData player in Players)
             {
-				if (!player.machine.isSimulating || player.machine.LocalSim) continue; // シミュレーション中のブロックに限る
+				// 見学いるとだめ？
+				if (player.machine == null || player.PlayMode == BesiegePlayMode.Spectator)
+                {
+					continue;
+                }
+
+				if (!player.machine.isSimulating || player.machine.LocalSim) // シミュレーション中のブロックに限る
+                {
+					continue;
+                }
+
 				Machine machine = player.machine;
 				foreach (BlockBehaviour block in machine.SimulationBlocks)
 				{
@@ -1743,6 +1739,4 @@ namespace LOSpace
 			}
         }
     }
-
-	
 }
