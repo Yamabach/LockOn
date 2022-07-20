@@ -119,7 +119,7 @@ You cannot avoid!
 	<Resources>
 		<!-- <Mesh name="some-mesh-name" path="some_mesh_file.obj" /> -->
 		<!-- <Texture name="some-texture-name" path="some_texture_file.png" /> -->
-		<Texture name="thumbnail" path="Thmbnail.png"/>
+		<Texture name="thumbnail" path="Thumbnail.png"/>
 		<Texture name="marker-green" path="marker-green.png" />
 		<Texture name="marker_progress_green" path="marker_progress_green.png" />
 	</Resources>

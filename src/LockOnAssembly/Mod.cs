@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Modding;
 using Modding.Blocks;
 using Modding.Modules;
@@ -24,6 +25,11 @@ namespace LOSpace
 		/// ACM武装のデータ
 		/// </summary>
 		public static XmlData AcmConfig;
+		/// <summary>
+		/// ロックオン情報
+		/// 撃った方のPlayerId，ターゲットのPlayerId
+		/// </summary>
+		public static MessageType LockonType;
 
 		public override void OnLoad()
 		{
@@ -35,6 +41,55 @@ namespace LOSpace
 			ACMLoaded = Mods.IsModLoaded(new Guid("A033CF51-D84F-45DE-B9A9-DEF1ED9A6075"));
 			AcmConfig = XMLDeserializer.Deserialize();
 			//AcmConfig.LogList(); // デバッグ用
+
+			// ロックオン情報を受け取った際の挙動
+			// ロックオンした対象に照準を向けさせる
+			LockonType = ModNetworking.CreateMessageType(DataType.Integer, DataType.Integer);
+			ModNetworking.Callbacks[LockonType] += new Action<Message>((msg) =>
+			{
+				int playerid = (int)msg.GetData(0);
+				int targetid = (int)msg.GetData(1);
+				//Log($"{playerid} -> {targetid}");
+				StartingBlockScript startingBlock = null;
+				GameObject target = null;
+				
+				foreach (PlayerData player in LockOnManager.Instance.Players)
+				{
+					// 見学いるとだめ
+					if (player.machine == null || player.PlayMode == BesiegePlayMode.Spectator)
+					{
+						continue;
+					}
+
+					if (!player.machine.isSimulating || player.machine.LocalSim) // シミュレーション中のブロックに限る
+					{
+						continue;
+					}
+
+					// LockOnManager.Instance.TargetListでは毎フレームリストが破棄されるので，こっちで新たに走査する
+					Machine machine = player.machine;
+					foreach (BlockBehaviour block in machine.SimulationBlocks)
+					{
+						var sb = block.GetComponent<StartingBlockScript>();
+						if (sb != null)
+						{
+							if (sb.playerId == playerid)
+                            {
+								startingBlock = sb;
+                            }
+							else if (sb.playerId == targetid)
+                            {
+								target = sb.gameObject;
+                            }
+						}
+					}
+				}
+				
+				if (startingBlock != null)
+				{
+					startingBlock.ChangeTarget((target == null) ? null : target);
+				}
+			});
 		}
 		/// <summary>
 		/// mod専用ログ関数
@@ -464,7 +519,7 @@ namespace LOSpace
         {
 			SetTargetCandidates();
 
-			// 敵がいない場合はデバッグ用ボールをターゲットにする
+			// 敵がいない場合は何もロックオンしない
 			if (TargetCandidates == null)
             {
 				ChangeTarget(null);
@@ -485,44 +540,43 @@ namespace LOSpace
 				return;
 			}
 
-			// カメラ中央にいる時間に応じてリスト内の敵にゲージを溜める
-			// カメラの外に出た敵のゲージは0になる
-			foreach (Enemy e in TargetCandidates)
-            {
-				var screenPos = RectTransformUtility.WorldToScreenPoint(mainCamera, e.Target.transform.position);
-				// とりあえず画面内に入ったことを想定 地形の奥にいる状態でロックオンを外すようにはしたい
-				if (0 < screenPos.x && screenPos.x < screenSize.x && 0 < screenPos.y && screenPos.y < screenSize.y)
-                {
-					// 1秒くらいでロックオンできるようにする
-                    e.Gauge += 0.01f;
-                }
-                else
-                {
-					e.Gauge = 0f;
-                }
-            }
+			// ロックオン処理はこのブロックが自分のものである場合に行う
+			if (playerId == Machine.Active().PlayerID)
+			{
 
-			// ゲージが溜まった敵の中で最も近い敵をロックオン
-			float minSqrDistance = float.PositiveInfinity;
-			//Enemy mostNearestEnemy = new Enemy(LockOnManager.Instance.DebugTarget); // 暫定
-			Enemy mostNearestEnemy = null;
-			foreach (Enemy e in TargetCandidates)
-            {
-				//if (!e.LockOn) continue; // ゲージが溜まっていなければ何もしない
+				// カメラ中央にいる時間に応じてリスト内の敵にゲージを溜める
+				// カメラの外に出た敵のゲージは0になる
+				foreach (Enemy e in TargetCandidates)
+				{
+					var screenPos = RectTransformUtility.WorldToScreenPoint(mainCamera, e.Target.transform.position);
+					// とりあえず画面内に入ったことを想定 地形の奥にいる状態でロックオンを外すようにはしたい
+					if (0 < screenPos.x && screenPos.x < screenSize.x && 0 < screenPos.y && screenPos.y < screenSize.y)
+					{
+						// 1秒くらいでロックオンできるようにする
+						e.Gauge += 0.01f;
+					}
+					else
+					{
+						e.Gauge = 0f;
+					}
+				}
 
-				if (e.Gauge < 1f)
-                {
-					continue;
-                }
+				// ゲージが溜まった敵の中で最も近い敵をロックオン
+				float minSqrDistance = float.PositiveInfinity;
+				Enemy mostNearestEnemy = null;
+				foreach (Enemy e in TargetCandidates)
+				{
+					if (!e.LockOn) continue; // ゲージが溜まっていなければ何もしない
 
-				var sqrDistance = Vector3.SqrMagnitude(e.Target.transform.position - transform.position);
-				if (sqrDistance < minSqrDistance)
-                {
-					minSqrDistance = sqrDistance;
-					mostNearestEnemy = e;
-                }
-            }
-			ChangeTarget(mostNearestEnemy == null ? null : mostNearestEnemy.Target);
+					var sqrDistance = Vector3.SqrMagnitude(e.Target.transform.position - transform.position);
+					if (sqrDistance < minSqrDistance)
+					{
+						minSqrDistance = sqrDistance;
+						mostNearestEnemy = e;
+					}
+				}
+				ChangeTarget(mostNearestEnemy == null ? null : mostNearestEnemy.Target);
+			}
 		}
 
         // シミュ開始時と終了時にリストを更新
@@ -666,9 +720,41 @@ namespace LOSpace
 		/// ターゲットを変更する
 		/// </summary>
 		public void ChangeTarget(GameObject NextTarget)
-        {
+		{
+			if (StatMaster.isClient)
+			{
+				bool curTargetIsNull = CurrentTarget == null;
+				bool nextTargetIsNull = NextTarget == null;
+				if (curTargetIsNull && nextTargetIsNull) return;
+				else if (curTargetIsNull && !nextTargetIsNull)
+				{
+					BlockBehaviour bb = NextTarget.GetComponent<BlockBehaviour>();
+					if (bb != null)
+					{
+						ModNetworking.SendToHost(Mod.LockonType.CreateMessage(playerId, (int)bb.ParentMachine.PlayerID));
+						Mod.Log($"{curTargetIsNull} -> {nextTargetIsNull}");
+					}
+				}
+				else if (!curTargetIsNull && nextTargetIsNull)
+				{
+					ModNetworking.SendToHost(Mod.LockonType.CreateMessage(playerId, -1));
+					Mod.Log($"{curTargetIsNull} -> {nextTargetIsNull}");
+				}
+				else // !curTargetIsNull && !nextTargetIsNull
+				{
+					if (CurrentTarget != NextTarget)
+					{
+						BlockBehaviour bb = NextTarget.GetComponent<BlockBehaviour>();
+						if (bb != null)
+						{
+							ModNetworking.SendToHost(Mod.LockonType.CreateMessage(playerId, (int)bb.ParentMachine.PlayerID));
+							Mod.Log($"{curTargetIsNull} -> {nextTargetIsNull}");
+						}
+					}
+				}
+			}
 			CurrentTarget = (NextTarget == null) ? null : NextTarget;
-        }
+		}
 		/// <summary>
 		/// 目標の画面上における位置
 		/// </summary>
@@ -832,7 +918,6 @@ namespace LOSpace
 			if (startingBlock.CurrentTarget != null && Apply.IsActive) // 標的が存在する場合 かつ オートエイムが適用されている場合
 			{
 				SetTarget(startingBlock.CurrentTarget);
-				//SetTarget(LockOnManager.Instance.DebugTargetPos, LockOnManager.Instance.DebugTargetRigid.velocity);
 				gravity = !StatMaster.GodTools.GravityDisabled;
 
 				ProjectileSpawn.rotation = Rotate(Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, InitialSpeed * Power), -transform.up, 30f);
@@ -1734,6 +1819,7 @@ namespace LOSpace
 					if (sb != null)
 					{
 						TargetList.Add(sb);
+						break;
 					}
 				}
 			}
