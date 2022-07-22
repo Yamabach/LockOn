@@ -423,14 +423,10 @@ namespace LOSpace
 		/// 敵にかかるマーク
 		/// </summary>
 		public Texture markerTexture;
-		/// <summary>
-		/// 敵にかかるマーク（デバッグ用）
-		/// </summary>
-		public Texture debugTextureRed;
-		/// <summary>
-		/// 敵にかかるマーク（デバッグ用）
-		/// </summary>
-		public Texture debugTextureGreen;
+		public Texture markerTexture_red;
+		public Texture markerCornerTexture;
+		public Texture markerCornerTexture_red;
+		public Texture targetTexture;
 
 		/// <summary>
 		/// 敵の画面内に入っているかの判定
@@ -479,7 +475,7 @@ namespace LOSpace
 			PlayerData player;
 			Playerlist.GetPlayer((ushort)playerId, out player);
 			team = StatMaster.isMP ? player.team : MPTeam.None;
-			Mod.Log("BB.team = " + team.ToString());
+			//Mod.Log("BB.team = " + team.ToString());
 
 			// デバッグ用
 			//ChangeTarget(LockOnManager.Instance.DebugTarget);
@@ -496,16 +492,10 @@ namespace LOSpace
 
 			// テクスチャのロード
 			markerTexture = ModTexture.GetTexture("marker-green").Texture;
-
-			// デバッグ用テクスチャの設定
-			var tex = new Texture2D(1, 1);
-			tex.SetPixel(0, 0, new Color(1, 0, 0, 0.3f));
-			tex.Apply();
-			debugTextureRed = tex;
-			var tex2 = new Texture2D(1, 1);
-			tex2.SetPixel(0, 0, new Color(0, 1, 0, 0.3f));
-			tex2.Apply();
-			debugTextureGreen = tex2;
+			markerTexture_red = ModTexture.GetTexture("marker-red").Texture;
+			markerCornerTexture = ModTexture.GetTexture("marker-corner-green").Texture;
+			markerCornerTexture_red = ModTexture.GetTexture("marker-corner-red").Texture;
+			targetTexture = ModTexture.GetTexture("lockon-target").Texture;
 
 			// UI設定
 			Activate = BB.AddKey("Auto Aim", "auto-aim", KeyCode.L);
@@ -604,13 +594,12 @@ namespace LOSpace
 		public void OnGUI()
 		{
 			// 自分のところでだけ表示する
-			if (playerId != Machine.Active().PlayerID && !BB.isSimulating && !IsActivated && TargetCandidates.Count == 0)
+			if (playerId != Machine.Active().PlayerID || !BB.isSimulating || !IsActivated || TargetCandidates.Count == 0)
 			{
 				return;
 			}
 
 			// ターゲットマーカー
-			// 矩形を描画
 			foreach (Enemy e in TargetCandidates)
             {
 				if (e == null)
@@ -621,10 +610,27 @@ namespace LOSpace
                 {
 					continue;
                 }
-				var tex = e.LockOn ? debugTextureRed : debugTextureGreen;
+
+				// マーカー
+				var tex = e.LockOn ? markerTexture_red : markerTexture;
 				Rect targetPos;
 				var z = ScreenPoint(e.Target, new Vector2(50, 50), out targetPos);
 				GUI.DrawTexture(targetPos, tex, ScaleMode.StretchToFill, true, 0);
+
+				// コーナー
+				var tex2 = e.LockOn ? markerCornerTexture_red : markerCornerTexture;
+				Rect targetPos2;
+				var z2 = ScreenPoint(e.Target, new Vector2(100 - 30 * e.Gauge, 100 - 30 * e.Gauge), out targetPos2);
+				GUI.DrawTexture(targetPos2, tex2, ScaleMode.StretchToFill, true, 0);
+
+				// ロックオンしている対象ならさらに外枠を表示する
+				if (CurrentTarget == e.Target)
+                {
+					Rect targetPos3;
+					var z3 = ScreenPoint(e.Target, new Vector2(90, 80), out targetPos3);
+					//targetPos3.y -= 50;
+					GUI.DrawTexture(targetPos3, targetTexture, ScaleMode.StretchToFill, true, 0);
+                }
             }
         }
 

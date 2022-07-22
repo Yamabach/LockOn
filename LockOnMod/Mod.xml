@@ -120,8 +120,12 @@ You cannot avoid!
 		<!-- <Mesh name="some-mesh-name" path="some_mesh_file.obj" /> -->
 		<!-- <Texture name="some-texture-name" path="some_texture_file.png" /> -->
 		<Texture name="thumbnail" path="Thumbnail.png"/>
-		<Texture name="marker-green" path="marker-green.png" />
-		<Texture name="marker_progress_green" path="marker_progress_green.png" />
+		<Texture name="marker-green" path="lockon_hud00.png" />
+		<Texture name="marker-red" path="lockon_hud00_red.png" />
+		<Texture name="marker-corner-green" path="lockon_hud01.png" />
+		<Texture name="marker-corner-red" path="lockon_hud01_red.png" />
+		<Texture name="lockon-text" path="lockon_hud02_red.png" />
+		<Texture name="lockon-target" path="lockon_hud03.png" />
 	</Resources>
 
 
