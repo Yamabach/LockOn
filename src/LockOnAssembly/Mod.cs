@@ -413,7 +413,10 @@ namespace LOSpace
 		/// <summary>
 		/// 敵候補
 		/// </summary>
-		public List<Enemy> TargetCandidates;
+		public List<Enemy> TargetCandidates
+		{
+			set; get;
+		}
 
 		// UI
 		/// <summary>
@@ -601,61 +604,13 @@ namespace LOSpace
 		public void OnGUI()
 		{
 			// 自分のところでだけ表示する
-			if (playerId != Machine.Active().PlayerID)
+			if (playerId != Machine.Active().PlayerID && !BB.isSimulating && !IsActivated && TargetCandidates.Count == 0)
 			{
 				return;
 			}
 
-			// シミュ中のみ
-			if (!BB.isSimulating)
-            {
-				return;
-            }
-
-			// 有効時のみ
-			if (!IsActivated)
-            {
-				return;
-            }
-
-			#region // デバッグ用GUI
-			/*
-			debugWindowRect = GUI.Window(debugWindowId, debugWindowRect, (id) =>
-			{
-				GUILayout.Label("CurrentTarget = " + CurrentTarget != null ? CurrentTarget.name : "None");
-				GUILayout.Label("team = " + team);
-				GUILayout.Label("playerId = " + playerId);
-				if (TargetCandidates != null)
-				{
-					GUILayout.Label("TargetCandidates.Count = " + TargetCandidates.Count);
-					foreach (Enemy e in TargetCandidates)
-					{
-						GUILayout.BeginHorizontal();
-						GUILayout.Label(e.Target.name);
-						GUILayout.Label(e.Target.transform.position.ToString());
-						GUILayout.Label(e.Gauge.ToString());
-						GUILayout.EndHorizontal();
-					}
-				}
-				GUI.DragWindow();
-			}, "Starting Block Script");
-			*/
-			#endregion
-
 			// ターゲットマーカー
-			//var targetPos = ScreenPoint(CurrentTarget);
-			//GUI.DrawTexture(new Rect(targetPos, new Vector2(100, 100)), debugTextureRed);
 			// 矩形を描画
-			//var rect = new Rect(12, 12, 300, 100);
-			//GUI.DrawTexture(rect, markerTexture, ScaleMode.StretchToFill, true, 0);
-			if (TargetCandidates == null)
-            {
-				return;
-            }
-			if (TargetCandidates.Count == 0)
-            {
-				return;
-            }
 			foreach (Enemy e in TargetCandidates)
             {
 				if (e == null)
