@@ -30,6 +30,10 @@ namespace LOSpace
 		/// 撃った方のPlayerId，ターゲットのPlayerId
 		/// </summary>
 		public static MessageType LockonType;
+		/// <summary>
+		/// ターゲット候補の更新を要請するメッセージ
+		/// </summary>
+		public static MessageType SetTargetListRequestType;
 
 		public override void OnLoad()
 		{
@@ -89,6 +93,25 @@ namespace LOSpace
 				{
 					startingBlock.ChangeTarget((target == null) ? null : target);
 				}
+			});
+
+			// ターゲット候補の更新を要請された際のメッセージ
+			// NO USE
+			SetTargetListRequestType = ModNetworking.CreateMessageType(DataType.Integer);
+			ModNetworking.Callbacks[SetTargetListRequestType] += new Action<Message>((msg) =>
+			{
+				// 見学状態なら何もしない
+				if (Machine.Active() == null)
+				{
+					return;
+				}
+
+				// 受け取ったIDが自分自身以外なら，setTargetListする
+				if ((int)msg.GetData(0) == Machine.Active().PlayerID)
+                {
+					return;
+                }
+				LockOnManager.Instance.SetTargetList();
 			});
 		}
 		/// <summary>
@@ -469,16 +492,16 @@ namespace LOSpace
             }
 			*/
 			#endregion
-			//team = StatMaster.isMP ? BB.Team : MPTeam.None;
-			//Mod.Log("BB.team = " + team.ToString());
 
 			PlayerData player;
 			Playerlist.GetPlayer((ushort)playerId, out player);
 			team = StatMaster.isMP ? player.team : MPTeam.None;
 			//Mod.Log("BB.team = " + team.ToString());
 
+			// ターゲットリスト更新
+			//ModNetworking.SendToAll(Mod.SetTargetListRequestType.CreateMessage(playerId));
+
 			// デバッグ用
-			//ChangeTarget(LockOnManager.Instance.DebugTarget);
 			CurrentTarget = null;
 			ChangeTarget(null);
 
@@ -487,7 +510,6 @@ namespace LOSpace
 			screenSize = new Vector2(Screen.width, Screen.height);
 
 			// 敵をリストに格納する
-			//SetTargetCandidates();
 			TargetCandidates = new List<Enemy>();
 
 			// テクスチャのロード
@@ -693,13 +715,13 @@ namespace LOSpace
 					if (bb != null)
 					{
 						ModNetworking.SendToHost(Mod.LockonType.CreateMessage(playerId, (int)bb.ParentMachine.PlayerID));
-						Mod.Log($"{curTargetIsNull} -> {nextTargetIsNull}");
+						//Mod.Log($"{curTargetIsNull} -> {nextTargetIsNull}");
 					}
 				}
 				else if (!curTargetIsNull && nextTargetIsNull)
 				{
 					ModNetworking.SendToHost(Mod.LockonType.CreateMessage(playerId, -1));
-					Mod.Log($"{curTargetIsNull} -> {nextTargetIsNull}");
+					//Mod.Log($"{curTargetIsNull} -> {nextTargetIsNull}");
 				}
 				else // !curTargetIsNull && !nextTargetIsNull
 				{
@@ -709,7 +731,7 @@ namespace LOSpace
 						if (bb != null)
 						{
 							ModNetworking.SendToHost(Mod.LockonType.CreateMessage(playerId, (int)bb.ParentMachine.PlayerID));
-							Mod.Log($"{curTargetIsNull} -> {nextTargetIsNull}");
+							//Mod.Log($"{curTargetIsNull} -> {nextTargetIsNull}");
 						}
 					}
 				}
@@ -1671,44 +1693,17 @@ namespace LOSpace
 	public class LockOnManager : SingleInstance<LockOnManager>
     {
 		public override string Name => "Lock On Manager";
-		//public Vector3 ProjectileDirection; // 弾の発射方向を一律で変更（デバッグ用）
 
 		// 標的（スタブロ）
 		public List<StartingBlockScript> TargetList;
 		public List<PlayerData> Players, PlayersPast; // 鯖内のプレイヤー一覧
 
-		// 標的（デバッグ用）
-		//public GameObject DebugTarget;
-		//public Vector3 DebugTargetPos;
-		//public Rigidbody DebugTargetRigid;
-
-		// クロスボウ検証用
-		public float crossbowPower = 10f;
-
-		// メッセージ（デバッグ用）
-		public string message0="", message1 = "", message2 = "", message3 = "";
-
 		public void Awake()
         {
 			TargetList = new List<StartingBlockScript>();
-
-			// デバッグ用
-			/*
-			DebugTarget = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-			DebugTarget.transform.parent = transform;
-			DebugTargetPos = new Vector3(5, 0, 30);
-			DebugTargetRigid = DebugTarget.GetComponent<Rigidbody>() ?? DebugTarget.AddComponent<Rigidbody>();
-			DebugTargetRigid.useGravity = false;
-			Collider col;
-			if (col = DebugTarget.GetComponent<Collider>())
-            {
-				Destroy(col);
-            }
-			*/
         }
 		public void FixedUpdate()
         {
-			//DebugTarget.transform.position = DebugTargetPos;
 			Players = Playerlist.Players;
 
 			// プレイヤーリスト更新 プレイヤーの数が変化した時に
@@ -1717,46 +1712,9 @@ namespace LOSpace
 			PlayersPast = new List<PlayerData>(Players);
 		}
 
-		// GUI
-		public Rect windowRect = new Rect(0, 0, 250, 400);
-		public int windowId = ModUtility.GetWindowId();
-		/*
-		public void OnGUI()
-        {
-			windowRect = GUI.Window(windowId, windowRect, (windowId) =>
-			{
-				// デバッグ用 弾の発射方向を一律で変更する
-				//GUILayout.Label("Projectile Direction (Debug)");
-				//ProjectileDirection.x = GUILayout.HorizontalSlider(ProjectileDirection.x, -180f, 180f);
-				//ProjectileDirection.y = GUILayout.HorizontalSlider(ProjectileDirection.y, -180f, 180f);
-				//ProjectileDirection.z = GUILayout.HorizontalSlider(ProjectileDirection.z, -180f, 180f);
-
-				//GUILayout.Label("Target Position (Debug)");
-				//DebugTargetPos.x = GUILayout.HorizontalSlider(DebugTargetPos.x, -50, 50);
-				//DebugTargetPos.y = GUILayout.HorizontalSlider(DebugTargetPos.y, -50, 50);
-				//DebugTargetPos.z = GUILayout.HorizontalSlider(DebugTargetPos.z, -50, 50);
-
-				GUILayout.Label("Target List (" + TargetList.Count + ") :");
-				foreach (StartingBlockScript sb in TargetList)
-                {
-					GUILayout.Label("id = " + sb.playerId + ", pos = " + sb.transform.position.ToString());
-                }
-
-				//GUILayout.Label("倍率 = " + crossbowPower);
-				//crossbowPower = GUILayout.HorizontalSlider(crossbowPower, 10, 1000);
-
-				GUILayout.Label("Message");
-				GUILayout.Label(message0);
-				GUILayout.Label(message1);
-				GUILayout.Label(message2);
-				GUILayout.Label(message3);
-
-				GUI.DragWindow();
-			}, "Lock On Mod");
-        }
-		*/
-
-		// 鯖内のターゲットを取得する
+		/// <summary>
+		/// 鯖内のターゲットを取得し，TargetListに格納する
+		/// </summary>
 		public void SetTargetList()
         {
 			TargetList = new List<StartingBlockScript>();

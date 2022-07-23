@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <data>
 	<blocks>
+		<!-- sample -->
 		<block name="hogehoge">
 			<guid>0000000000000000</guid>
 			<local_id>1</local_id>
 			<projectile_mass>1</projectile_mass>
 			<gravity>true</gravity>
 		</block>
+		
+		<!-- Battle Bullet ver2 -->
 		<block name="bullet001a">
 			<guid>0e746ba8-7cbe-4afd-95b6-a9f67e814f7e</guid>
 			<local_id>10</local_id>
@@ -31,6 +34,8 @@
 			<projectile_mass>1.0</projectile_mass>
 			<gravity>true</gravity>
 		</block>
+		
+		<!-- Laser Weapons -->
 		<block name="laser001">
 			<guid>15259577-bd19-4397-8646-88d235cf8d24</guid>
 			<local_id>10</local_id>
@@ -54,6 +59,122 @@
 			<local_id>16</local_id>
 			<projectile_mass>0.20</projectile_mass>
 			<gravity>false</gravity>
+		</block>
+		
+		<!-- E's Tank Cannon -->
+		<block name="12.7mmMachineGunHE">
+			<guid>50e63b55-b976-4009-82ab-66f989218122</guid>
+			<local_id>19</local_id>
+			<projectile_mass>0.05</projectile_mass>
+			<gravity>true</gravity>
+		</block>
+		<block name="12.7mmMachineGun">
+			<guid>50e63b55-b976-4009-82ab-66f989218122</guid>
+			<local_id>20</local_id>
+			<projectile_mass>0.05</projectile_mass>
+			<gravity>true</gravity>
+		</block>
+		<block name="20mmL65HE">
+			<guid>50e63b55-b976-4009-82ab-66f989218122</guid>
+			<local_id>11</local_id>
+			<projectile_mass>0.05</projectile_mass>
+			<gravity>true</gravity>
+		</block>
+		<block name="45mmL46AP">
+			<guid>50e63b55-b976-4009-82ab-66f989218122</guid>
+			<local_id>8</local_id>
+			<projectile_mass>1.0</projectile_mass>
+			<gravity>true</gravity>
+		</block>
+		<block name="45mmL46HE">
+			<guid>50e63b55-b976-4009-82ab-66f989218122</guid>
+			<local_id>7</local_id>
+			<projectile_mass>0.05</projectile_mass>
+			<gravity>true</gravity>
+		</block>
+		<block name="75mmL24HEAT">
+			<guid>50e63b55-b976-4009-82ab-66f989218122</guid>
+			<local_id>18</local_id>
+			<projectile_mass>0.5</projectile_mass>
+			<gravity>true</gravity>
+		</block>
+		<block name="75mmL48AP">
+			<guid>50e63b55-b976-4009-82ab-66f989218122</guid>
+			<local_id>13</local_id>
+			<projectile_mass>3.0</projectile_mass>
+			<gravity>true</gravity>
+		</block>
+		<block name="75mmL48HE">
+			<guid>50e63b55-b976-4009-82ab-66f989218122</guid>
+			<local_id>12</local_id>
+			<projectile_mass>0.5</projectile_mass>
+			<gravity>true</gravity>
+		</block>
+		<block name="88mmL74AntiAir">
+			<guid>50e63b55-b976-4009-82ab-66f989218122</guid>
+			<local_id>5</local_id>
+			<projectile_mass>0.5</projectile_mass>
+			<gravity>true</gravity>
+		</block>
+		<block name="88mmL74APCR">
+			<guid>50e63b55-b976-4009-82ab-66f989218122</guid>
+			<local_id>6</local_id>
+			<projectile_mass>1.5</projectile_mass>
+			<gravity>true</gravity>
+		</block>
+		<block name="88mmL74APHE">
+			<guid>50e63b55-b976-4009-82ab-66f989218122</guid>
+			<local_id>26</local_id>
+			<projectile_mass>2.0</projectile_mass>
+			<gravity>true</gravity>
+		</block>
+		<block name="100mmRecoillessHESH">
+			<guid>50e63b55-b976-4009-82ab-66f989218122</guid>
+			<local_id>27</local_id>
+			<projectile_mass>0.5</projectile_mass>
+			<gravity>true</gravity>
+		</block>
+		<block name="120mmL44APFSDS">
+			<guid>50e63b55-b976-4009-82ab-66f989218122</guid>
+			<local_id>1</local_id>
+			<projectile_mass>2.0</projectile_mass>
+			<gravity>true</gravity>
+		</block>
+		<block name="120mmL44HEATFS">
+			<guid>50e63b55-b976-4009-82ab-66f989218122</guid>
+			<local_id>4</local_id>
+			<projectile_mass>1.0</projectile_mass>
+			<gravity>true</gravity>
+		</block>
+		<block name="152mmL23HE">
+			<guid>50e63b55-b976-4009-82ab-66f989218122</guid>
+			<local_id>9</local_id>
+			<projectile_mass>2.3</projectile_mass>
+			<gravity>true</gravity>
+		</block>
+		<block name="600mmL8SB">
+			<guid>50e63b55-b976-4009-82ab-66f989218122</guid>
+			<local_id>28</local_id>
+			<projectile_mass>200</projectile_mass>
+			<gravity>true</gravity>
+		</block>
+		<block name="50000mmL0.036-typeCore">
+			<guid>50e63b55-b976-4009-82ab-66f989218122</guid>
+			<local_id>22</local_id>
+			<projectile_mass>10.0</projectile_mass>
+			<gravity>true</gravity>
+		</block>
+		<block name="MedievalCannon">
+			<guid>50e63b55-b976-4009-82ab-66f989218122</guid>
+			<local_id>10</local_id>
+			<projectile_mass>2.0</projectile_mass>
+			<gravity>true</gravity>
+		</block>
+		<block name="XmasCannon">
+			<guid>50e63b55-b976-4009-82ab-66f989218122</guid>
+			<local_id>24</local_id>
+			<projectile_mass>20.0</projectile_mass>
+			<gravity>true</gravity>
 		</block>
 	</blocks>
 </data>
