@@ -451,6 +451,44 @@ namespace LOSpace
 		public Texture markerCornerTexture_red;
 		public Texture targetTexture;
 
+		// ロックオンモード選択
+		/// <summary>
+		/// ロックオンする際に優先する項目
+		/// </summary>
+		public enum LockOnMode
+        {
+			Nearest,
+			MostCentral,
+        }
+		/// <summary>
+		/// ロックオンモード
+		/// </summary>
+		public LockOnMode mode
+        {
+            get
+            {
+				return (LockOnMode)LockOnModeMenu.Value;
+            }
+        }
+		/// <summary>
+		/// ロックオンモード選択用UI
+		/// </summary>
+		public MMenu LockOnModeMenu;
+		/// <summary>
+		/// UI用名前
+		/// </summary>
+		public List<string> LockOnModeItems
+        {
+            get
+            {
+				return new List<string>
+				{
+					"Nearest",
+					"Most Central",
+				};
+            }
+        }
+
 		/// <summary>
 		/// 敵の画面内に入っているかの判定
 		/// </summary>
@@ -521,6 +559,7 @@ namespace LOSpace
 
 			// UI設定
 			Activate = BB.AddKey("Auto Aim", "auto-aim", KeyCode.L);
+			LockOnModeMenu = BB.AddMenu("lock-on-mode", 0, LockOnModeItems);
 		}
         public override void SimulateUpdateAlways()
 		{
@@ -576,21 +615,47 @@ namespace LOSpace
 					}
 				}
 
-				// ゲージが溜まった敵の中で最も近い敵をロックオン
-				float minSqrDistance = float.PositiveInfinity;
-				Enemy mostNearestEnemy = null;
-				foreach (Enemy e in TargetCandidates)
+				// ロックオン
+				switch (mode)
 				{
-					if (!e.LockOn) continue; // ゲージが溜まっていなければ何もしない
+					// ゲージが溜まった敵の中で最も近い敵をロックオン
+					default:
+					case LockOnMode.Nearest:
+						float minSqrDistance = float.PositiveInfinity;
+						Enemy mostNearestEnemy = null;
+						foreach (Enemy e in TargetCandidates)
+						{
+							if (!e.LockOn) continue; // ゲージが溜まっていなければ何もしない
 
-					var sqrDistance = Vector3.SqrMagnitude(e.Target.transform.position - transform.position);
-					if (sqrDistance < minSqrDistance)
-					{
-						minSqrDistance = sqrDistance;
-						mostNearestEnemy = e;
-					}
+							var sqrDistance = Vector3.SqrMagnitude(e.Target.transform.position - transform.position);
+							if (sqrDistance < minSqrDistance)
+							{
+								minSqrDistance = sqrDistance;
+								mostNearestEnemy = e;
+							}
+						}
+						ChangeTarget(mostNearestEnemy == null ? null : mostNearestEnemy.Target);
+						break;
+					// ゲージが溜まった敵の中で最も画面の中心にいる敵をロックオン
+					case LockOnMode.MostCentral:
+						float minSqrDistance2 = float.PositiveInfinity;
+						Enemy mostCentralEnemy = null;
+						foreach (Enemy e in TargetCandidates)
+                        {
+							if (!e.LockOn) continue;
+
+							Vector2 screenPos = RectTransformUtility.WorldToScreenPoint(mainCamera, e.Target.transform.position);
+							Vector2 screenCenter = screenSize / 2;
+							var sqrDistance = Vector2.SqrMagnitude(screenPos - screenCenter);
+							if (sqrDistance < minSqrDistance2)
+                            {
+								minSqrDistance2 = sqrDistance;
+								mostCentralEnemy = e;
+                            }
+                        }
+						ChangeTarget(mostCentralEnemy == null ? null : mostCentralEnemy.Target);
+						break;
 				}
-				ChangeTarget(mostNearestEnemy == null ? null : mostNearestEnemy.Target);
 			}
 		}
 
