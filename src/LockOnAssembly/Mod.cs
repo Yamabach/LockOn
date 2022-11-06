@@ -868,7 +868,6 @@ namespace LOSpace
 	/// 弾道変更を行う武装系ブロックの基底クラス
 	/// スタブロでロックオンした敵の移動位置を予測し、発射角度を変更する役割
 	/// TODO: 照準が当たる先にマーカーを表示する
-	/// TODO: rigidbodyの排除（クライアントのゲーム上にはrigidbodyが無いため）
 	/// </summary>
 	public abstract class LockOnBlockScript : AbstractBlockScript
     {
@@ -932,6 +931,11 @@ namespace LOSpace
 		/// このブロックにロックオンモードを適用するかどうか
 		/// </summary>
 		public MToggle Apply;
+		/// <summary>
+		/// ロックオンが有効になる角度差
+		/// 基本は30°
+		/// </summary>
+		public MSlider LimitAngle;
 
 		/// <summary>
 		/// スタブロ
@@ -959,6 +963,8 @@ namespace LOSpace
 
 			// UI設定
 			Apply = BB.AddToggle("Apply Auto Aim", "apply", true);
+			LimitAngle = BB.AddSlider("Limit Angle", "limit-angle", 30f, 0f, 180f);
+			//LimitAngle.
 		}
 		public override void SimulateFixedUpdateAlways()
 		{
@@ -968,7 +974,7 @@ namespace LOSpace
 				SetTarget(startingBlock.CurrentTarget);
 				gravity = !StatMaster.GodTools.GravityDisabled;
 
-				ProjectileSpawn.rotation = Rotate(Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, InitialSpeed * Power), -transform.up, 30f);
+				ProjectileSpawn.rotation = Rotate(Predict(TargetPos, TargetPosBefore1, TargetPosBefore2, InitialSpeed * Power), -transform.up);
 			}
             else // 標的が存在しない場合
             {
@@ -1113,8 +1119,9 @@ namespace LOSpace
 		/// <param name="defaultRot">無効な場合の向き</param>
 		/// <param name="limitAngle">回転可能な上限角度</param>
 		/// <returns></returns>
-		public virtual Quaternion Rotate(Vector3 to, Vector3 defaultRot, float limitAngle = 30f) // 正面の向きに注意！
+		public virtual Quaternion Rotate(Vector3 to, Vector3 defaultRot) // 正面の向きに注意！
 		{
+			float limitAngle = LimitAngle.Value;
 			return Vector3.Angle(defaultRot, to - ProjectileSpawn.position) < limitAngle ? Quaternion.LookRotation(to - ProjectileSpawn.position) : Quaternion.LookRotation(defaultRot);
 		}
 		/// <summary>
