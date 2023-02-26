@@ -8,6 +8,8 @@ using Modding.Modules.Official;
 using Besiege;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+using ObjectTypes;
 
 namespace LOSpace
 {
@@ -30,10 +32,83 @@ namespace LOSpace
 		/// 撃った方のPlayerId，ターゲットのPlayerId
 		/// </summary>
 		public static MessageType LockonType;
+		/*
 		/// <summary>
 		/// ターゲット候補の更新を要請するメッセージ
 		/// </summary>
-		public static MessageType SetTargetListRequestType;
+		//public static MessageType SetTargetListRequestType;
+		*/
+		/// <summary>
+		/// キャンペーンのステージの親オブジェクト名
+		/// </summary>
+		public static string[] LEVEL_TITLES = new string[]
+		{
+			// IPSILON
+			"LEVEL 1 COTTAGE",
+			"LEVEL 2 WINDMILL",
+			"LEVEL 55 CARAVAN",
+			"LEVEL 3 OLD HOWL BATTLEFIELD",
+			"LEVEL 4 PERIMETER WALL",
+			"LEVEL 5 QUEENS FODDER",
+			"LEVEL 6 OLD MINING SITE",
+			"LEVEL 7 STANDING STONE",
+			"LEVEL 8 THINSIDE FORT",
+			"LEVEL 9 MIDLANDS ENCAMPMENT",
+			"LEVEL 10 LYRE PEAK",
+			"LEVEL 11 HIGHLAND TOWER",
+			"LEVEL 12 PINE LUMBER SITE",
+			"LEVEL 13 SOLOMONS FLOCK",
+			"LEVEL 14 MARKSMANS PASS",
+			"LEVEL 15 WYNNFRITHS KEEP",
+
+			// TOLBRYND
+			"LEVEL 16 THE DUKE'S PLEA",
+			"LEVEL 17 SOUTHERN SHRINE",
+			"LEVEL 18 SCOUTS OF TOLBRYND",
+			"LEVEL 19 THE DUKES PROTOTYPES",
+			"LEVEL 20 THE DUKES DEAR FREIGHTERS",
+			"LEVEL 21 GRAND CRYSTAL",
+			"LEVEL 22 FARMER GASCOIGNE",
+			"LEVEL 23 VILLAGE OF DIOM",
+			"LEVEL 24 MIDLAND PATROL",
+			"LEVEL 25 VALLEY OF THE WIND",
+			"LEVEL 26 ODD CONTRAPTION",
+			"LEVEL 27 DIOM WELL",
+			"LEVEL 28 SURROUNDED",
+			"LEVEL 29 SACRED FLAME",
+			"LEVEL 30 ARGUS' GROUNDS",
+			"LEVEL 31 THE DUKE'S KNOWLEDGE",
+			"LEVEL 32 THE VENERATED HEART",
+			"LEVEL 33 SHATTERED FILED",
+			"LEVEL 34 ARAS' REFUGE",
+
+			// VALFROSS
+			"LEVEL 35 THE FROZEN PATH",
+			"LEVEL 36 THE AWAKENING BELLS",
+			"LEVEL 37 PECULIAR CLEARING",
+			"LEVEL 38 The Martyr Knights",
+			"LEVEL 39 ORDYCE LODE",
+			"LEVEL 40 MOUNTAIN BARRIER",
+			"LEVEL 41 RELICT FROST",
+			"LEVEL 42 CONSUMED KING",
+			"LEVEL 43 REVOLVING MONOLITH",
+			"LEVEL 44 PERNITENT TOWER",
+
+			// CLORMAR
+			"LEVEL 45 TOWERING EYE",
+			"LEVEL 46 DAHOR VAULT",
+			"LEVEL 47 FORGOTTEN SANCTUM",
+			"LEVEL 48 MESA OUTPOST",
+			"LEVEL 49 TREE OF AKHMORA",
+			"LEVEL 50 AMBUSH",
+			"LEVEL 51 STRANGE ARTEFACT",
+			"LEVEL 52 KAHRAZ VILLAGE",
+			"LEVEL 53 STOCK TOWER",
+			"LEVEL 54 THE LAST STAND",
+
+			// SANDBOX
+			"LEVEL SANDBOX"
+		};
 
 		public override void OnLoad()
 		{
@@ -44,6 +119,18 @@ namespace LOSpace
 			UnityEngine.Object.DontDestroyOnLoad(mod);
 			ACMLoaded = Mods.IsModLoaded(new Guid("A033CF51-D84F-45DE-B9A9-DEF1ED9A6075"));
 			AcmConfig = XMLDeserializer.Deserialize();
+
+			SceneManager.sceneLoaded += (nextScene, mode) =>
+			{
+				//Log($"Next Scene: {nextScene.name}");
+				// シーン名が数字またはSANDBOXなら続ける
+				//int sceneIndex;
+				//if (int.TryParse(nextScene.name, out sceneIndex) || nextScene.name == "SANDBOX")
+				{
+					//Log($"in LEVELs!");
+					
+				}
+			};
 			//AcmConfig.LogList(); // デバッグ用
 
 			// ロックオン情報を受け取った際の挙動
@@ -57,6 +144,7 @@ namespace LOSpace
 				StartingBlockScript startingBlock = null;
 				GameObject target = null;
 				
+				/*
 				foreach (PlayerData player in LockOnManager.Instance.Players)
 				{
 					// 見学いるとだめ
@@ -75,7 +163,7 @@ namespace LOSpace
 					foreach (BlockBehaviour block in machine.SimulationBlocks)
 					{
 						var sb = block.GetComponent<StartingBlockScript>();
-						if (sb != null)
+						if (sb is object)
 						{
 							if (sb.playerId == playerid)
                             {
@@ -88,13 +176,37 @@ namespace LOSpace
 						}
 					}
 				}
+				*/
+				foreach (var t in LockOnManager.Instance.TargetList)
+                {
+					GameObject targetObject = t.TargetObject;
+					var sb = targetObject.GetComponent<StartingBlockScript>();
+					var lNpc = targetObject.GetComponent<LevelNPC>();
+
+					if (sb is object)
+                    {
+						if (sb.playerId == playerid)
+                        {
+							startingBlock = sb;
+                        }
+						else if (sb.playerId == targetid)
+                        {
+							target = sb.TargetObject;
+                        }
+                    }
+					if (lNpc is object)
+                    {
+						int levelIdentity = targetid / 100;
+						target = lNpc.TargetObject;
+                    }
+                }
 				
-				if (startingBlock != null)
+				if (startingBlock is object)
 				{
-					startingBlock.ChangeTarget((target == null) ? null : target);
+					startingBlock.ChangeTarget((target is null) ? null : target);
 				}
 			});
-
+			/*
 			// ターゲット候補の更新を要請された際のメッセージ
 			// NO USE
 			SetTargetListRequestType = ModNetworking.CreateMessageType(DataType.Integer);
@@ -113,6 +225,7 @@ namespace LOSpace
                 }
 				LockOnManager.Instance.SetTargetList();
 			});
+			*/
 		}
 		/// <summary>
 		/// mod専用ログ関数
@@ -144,7 +257,7 @@ namespace LOSpace
 	/// </summary>
 	public class AddScriptManager : SingleInstance<AddScriptManager>
 	{
-		public override string Name { get { return "Add Script Manager"; } }
+		public override string Name => "Add Script Manager";
 		public bool isFirstFrame = true;
 		public PlayerMachineInfo PMI;
 		public Dictionary<int, Type> BlockDict;
@@ -159,6 +272,8 @@ namespace LOSpace
 				{(int)BlockType.Flamethrower, typeof(FlamethrowerScript) },
 			};
 			Events.OnBlockInit += new Action<Block>(AddScript);
+			Events.OnEntityPlaced += new Action<Modding.Levels.Entity>(AddScript);
+			Events.OnLevelLoaded += new Action<Modding.Levels.Level>(AddScript);
 			/*
 			foreach (BlockBehaviour block in Machine.Active().BuildingBlocks)
             {
@@ -203,6 +318,67 @@ namespace LOSpace
 					ModConsole.Log("AddSctipt to mod block Error.");
 				}
 				return;
+			}
+		}
+		public void AddScript(Modding.Levels.Entity entity)
+        {
+			// エンティティID
+			int id = entity.Prefab.Id;
+
+			bool isAnimal = id == 2 || id == 3 || id == 65 || id == 66 || id == 67;
+			bool isHuman = (int)Humans.Peasant <= id && id <= 4021;
+
+			if (isAnimal || isHuman)
+            {
+				entity.GameObject.AddComponent<LevelNPC>();
+            }
+        }
+		public void AddScript(Modding.Levels.Level level)
+        {
+			foreach (Modding.Levels.Entity entity in level.Entities)
+            {
+				AddScript(entity);
+            }
+        }
+		public void AddScript()
+        {
+			foreach (string title in Mod.LEVEL_TITLES)
+			{
+				GameObject level = GameObject.Find(title);
+				if (level is object)
+				{
+					//Mod.Log($"title = {title}");
+
+					var simple = level.GetComponentsInChildren<EnemyAISimple>();
+					foreach (var s in simple)
+					{
+						//Mod.Log($"simple");
+						var _ = s.GetComponent<SimpleNPC>() ?? s.gameObject.AddComponent<SimpleNPC>();
+					}
+
+					var entityAi = level.GetComponentsInChildren<EntityAI>();
+					foreach (var e in entityAi)
+					{
+						//Mod.Log($"entityAi");
+						var _ = e.GetComponent<EntityAINPC>() ?? e.gameObject.AddComponent<EntityAINPC>();
+					}
+
+					var freighter = level.GetComponentsInChildren<FreighterAI>();
+					foreach (var f in freighter)
+					{
+						//Mod.Log($"freighter");
+						var _ = f.GetComponent<FreighterNPC>() ?? f.gameObject.AddComponent<FreighterNPC>();
+					}
+
+					var bird = level.GetComponentsInChildren<SimpleBirdAI>();
+					foreach (var b in bird)
+                    {
+						//Mod.Log($"bird");
+						var _ = b.GetComponent<BirdNPC>() ?? b.gameObject.AddComponent<BirdNPC>();
+                    }
+
+					break;
+				}
 			}
 		}
 	}
@@ -409,8 +585,9 @@ namespace LOSpace
 	/// ターゲット候補を網羅し、その中から適切なターゲットを選ぶ役割
 	/// 画面のターゲットの上にロックオンされたかを示すマーカーを表示する
 	/// </summary>
-	public class StartingBlockScript : AbstractBlockScript
+	public class StartingBlockScript : AbstractBlockScript, ITarget
     {
+		public GameObject TargetObject => gameObject;
 		/// <summary>
 		/// 現在の目標
 		/// </summary>
@@ -418,7 +595,10 @@ namespace LOSpace
 		/// <summary>
 		/// 現在の自分のチーム
 		/// </summary>
-		public MPTeam team;
+		public MPTeam Team
+        {
+			set; get;
+        }
 		/// <summary>
 		/// サーバ上でのプレイヤーID
 		/// </summary>
@@ -441,7 +621,7 @@ namespace LOSpace
 			set; get;
 		}
 
-		// UI
+		#region UI
 		/// <summary>
 		/// 敵にかかるマーク
 		/// </summary>
@@ -450,8 +630,9 @@ namespace LOSpace
 		public Texture markerCornerTexture;
 		public Texture markerCornerTexture_red;
 		public Texture targetTexture;
+		#endregion
 
-		// ロックオンモード選択
+		#region ロックオンモード選択
 		/// <summary>
 		/// ロックオンする際に優先する項目
 		/// </summary>
@@ -488,6 +669,7 @@ namespace LOSpace
 				};
             }
         }
+		#endregion
 
 		/// <summary>
 		/// 敵の画面内に入っているかの判定
@@ -500,6 +682,8 @@ namespace LOSpace
 
         public override void SafeAwake()
         {
+			AddScriptManager.Instance.AddScript();
+
 			base.SafeAwake();
 			// サーバーID取得
 			playerId = BB.ParentMachine.PlayerID;
@@ -533,7 +717,7 @@ namespace LOSpace
 
 			PlayerData player;
 			Playerlist.GetPlayer((ushort)playerId, out player);
-			team = StatMaster.isMP ? player.team : MPTeam.None;
+			Team = StatMaster.isMP ? player.team : MPTeam.None;
 			//Mod.Log("BB.team = " + team.ToString());
 
 			// ターゲットリスト更新
@@ -658,8 +842,16 @@ namespace LOSpace
 				}
 			}
 		}
+		public void OnEnable()
+		{
+			AddTargetList();
+		}
+		public void OnDisable()
+		{
+			RemoveTargetList();
+		}
 
-        // シミュ開始時と終了時にリストを更新
+		// シミュ開始時と終了時にリストを更新
 		/*
         public override void OnSimulateStart()
         {
@@ -671,8 +863,8 @@ namespace LOSpace
         }
 		*/
 
-        // デバッグ用GUI
-        public Rect debugWindowRect = new Rect(100, 100, 200, 150);
+		// デバッグ用GUI
+		public Rect debugWindowRect = new Rect(100, 100, 200, 150);
 		public int debugWindowId = ModUtility.GetWindowId();
 		/// <summary>
 		/// ターゲットマーカー
@@ -727,7 +919,7 @@ namespace LOSpace
 		/// ターゲット候補の中から前提条件を満たさなくなったものを除く（ターゲットリストにいないものを弾く）→新たに前提条件を満たすもので、まだ候補に入っていないものを加える
 		/// 将来的にはUpdateに置かずに適切なタイミングで呼び出すようにしたい
 		/// </summary>
-		public void SetTargetCandidates()
+		public void SetTargetCandidates() // LockOnManager.TargetListを使ってるのはここだけ
         {
 			var ret = new List<Enemy>();
 			if (LockOnManager.Instance.TargetList.Count == 0)
@@ -735,19 +927,21 @@ namespace LOSpace
 				TargetCandidates = ret;
 				return;
             }
-			foreach (StartingBlockScript sb in LockOnManager.Instance.TargetList)
+			foreach (ITarget sb in LockOnManager.Instance.TargetList)
             {
 				foreach (Enemy e in TargetCandidates)
                 {
 					// 残留組
-					if (sb.gameObject == e.Target)
+					//if (sb.TargetObject == null) Mod.Log($"null 1");
+					if (sb.TargetObject == e.Target)
                     {
 						ret.Add(new Enemy(e.Target, e.Gauge));
                     }
                 }
-				if ((sb.team != team || sb.team == MPTeam.None) && sb != this) // ターゲット候補にするための前提条件
+				if ((sb.Team != Team || sb.Team == MPTeam.None) && sb != this as ITarget) // ターゲット候補にするための前提条件
                 {
-					var candidate = new Enemy(sb.gameObject);
+					//if (sb.TargetObject == null) Mod.Log($"null 2");
+					var candidate = new Enemy(sb.TargetObject);
 					bool exist = false;
 					foreach (Enemy e in TargetCandidates)
                     {
@@ -759,6 +953,7 @@ namespace LOSpace
 					if (!exist)
                     {
 						ret.Add(candidate);
+						//Mod.Log($"added candidate {sb}");
 					}
 				}
             }
@@ -780,23 +975,36 @@ namespace LOSpace
 					if (bb != null)
 					{
 						ModNetworking.SendToHost(Mod.LockonType.CreateMessage(playerId, (int)bb.ParentMachine.PlayerID));
+						//ModNetworking.SendToHost(Mod.LockonType.CreateMessage(playerId, (int)bb.ParentMachine.PlayerID));
 						//Mod.Log($"{curTargetIsNull} -> {nextTargetIsNull}");
 					}
+
+					LevelEntity le = NextTarget.GetComponent<LevelEntity>();
+					if (le != null)
+                    {
+						ModNetworking.SendToHost(Mod.LockonType.CreateMessage(playerId, (int)le.identifier * 100));
+                    }
 				}
 				else if (!curTargetIsNull && nextTargetIsNull)
 				{
 					ModNetworking.SendToHost(Mod.LockonType.CreateMessage(playerId, -1));
 					//Mod.Log($"{curTargetIsNull} -> {nextTargetIsNull}");
 				}
-				else // !curTargetIsNull && !nextTargetIsNull
+				else // = !curTargetIsNull && !nextTargetIsNull
 				{
-					if (CurrentTarget != NextTarget)
+					if (CurrentTarget != NextTarget) // 変化の前後で同じなら何もしない
 					{
 						BlockBehaviour bb = NextTarget.GetComponent<BlockBehaviour>();
 						if (bb != null)
 						{
 							ModNetworking.SendToHost(Mod.LockonType.CreateMessage(playerId, (int)bb.ParentMachine.PlayerID));
 							//Mod.Log($"{curTargetIsNull} -> {nextTargetIsNull}");
+						}
+
+						LevelEntity le = NextTarget.GetComponent<LevelEntity>();
+						if (le != null)
+						{
+							ModNetworking.SendToHost(Mod.LockonType.CreateMessage(playerId, (int)le.identifier * 100));
 						}
 					}
 				}
@@ -861,6 +1069,38 @@ namespace LOSpace
             {
 				Target = go;
 				gauge = g;
+            }
+        }
+
+		/// <summary>
+		/// 自身（または同一マシン内のスタブロ）をターゲットリストに格納する
+		/// </summary>
+		public void AddTargetList()
+        {
+			if (!BB.isSimulating || BB.ParentMachine.LocalSim)
+            {
+				return;
+            }
+			var list = LockOnManager.Instance.TargetList;
+			foreach (var block in BB.ParentMachine.SimulationBlocks)
+            {
+				var sb = block.GetComponent<StartingBlockScript>();
+				if (sb is null)
+                {
+					continue;
+                }
+				LockOnManager.Instance.TargetList.Add(sb);
+				break;
+			}
+		}
+		/// <summary>
+		/// 自身をターゲットリストから外す
+		/// </summary>
+		public void RemoveTargetList()
+        {
+			if (LockOnManager.Instance.TargetList.Contains(this))
+            {
+				LockOnManager.Instance.TargetList.Remove(this);
             }
         }
     }
@@ -936,6 +1176,10 @@ namespace LOSpace
 		/// 基本は30°
 		/// </summary>
 		public MSlider LimitAngle;
+		/// <summary>
+		/// 曲線近似をするかどうか
+		/// </summary>
+		public MToggle HighPrecisionMode;
 
 		/// <summary>
 		/// スタブロ
@@ -963,9 +1207,11 @@ namespace LOSpace
 
 			// UI設定
 			Apply = BB.AddToggle("Apply Auto Aim", "apply", true);
+			HighPrecisionMode = BB.AddToggle("High Precision\nMode", "high-precision-mode", true);
 			LimitAngle = BB.AddSlider("Limit Angle", "limit-angle", 30f, 0f, 180f);
 			//LimitAngle.
 		}
+
 		public override void SimulateFixedUpdateAlways()
 		{
 			// 弾道予測
@@ -1005,7 +1251,7 @@ namespace LOSpace
 		public Vector3 Predict(Vector3 targetPos, Vector3 targetPos1, Vector3 targetPos2, float speed, float limitAngle = 0.03f, float limitMove = 0.03f)
         {
 			Vector3 predTargetPos;
-			if (Mathf.Abs(Vector3.Angle(targetPos - targetPos1, targetPos1 - targetPos2)) < limitAngle && (targetPos - targetPos1).sqrMagnitude > limitMove * limitMove)
+			if (Mathf.Abs(Vector3.Angle(targetPos - targetPos1, targetPos1 - targetPos2)) < limitAngle && (targetPos - targetPos1).sqrMagnitude > limitMove * limitMove && HighPrecisionMode.IsActive)
 			{
 				// 円形予測
 				predTargetPos = CircularPredict(targetPos, targetPos1, targetPos2, speed);
@@ -1767,12 +2013,16 @@ namespace LOSpace
 		public override string Name => "Lock On Manager";
 
 		// 標的（スタブロ）
-		public List<StartingBlockScript> TargetList;
-		public List<PlayerData> Players, PlayersPast; // 鯖内のプレイヤー一覧
+		public List<ITarget> TargetList;
+		/// <summary>
+		/// 鯖内のプレイヤー一覧
+		/// </summary>
+		public List<PlayerData> Players;
+		public List<PlayerData> PlayersPast;
 
 		public void Awake()
         {
-			TargetList = new List<StartingBlockScript>();
+			TargetList = new List<ITarget>();
         }
 		public void FixedUpdate()
         {
@@ -1780,8 +2030,8 @@ namespace LOSpace
 
 			// プレイヤーリスト更新 プレイヤーの数が変化した時に
 			// とりあえず毎回取得し直してみる
-			SetTargetList();
-			PlayersPast = new List<PlayerData>(Players);
+			//SetTargetList();
+			//PlayersPast = new List<PlayerData>(Players);
 		}
 
 		/// <summary>
@@ -1789,11 +2039,11 @@ namespace LOSpace
 		/// </summary>
 		public void SetTargetList()
         {
-			TargetList = new List<StartingBlockScript>();
+			TargetList = new List<ITarget>();
 			foreach (PlayerData player in Players)
             {
 				// 見学いるとだめ？
-				if (player.machine == null || player.PlayMode == BesiegePlayMode.Spectator)
+				if (player.machine is null || player.PlayMode == BesiegePlayMode.Spectator)
                 {
 					continue;
                 }
@@ -1806,7 +2056,7 @@ namespace LOSpace
 				Machine machine = player.machine;
 				foreach (BlockBehaviour block in machine.SimulationBlocks)
 				{
-					var sb = block.GetComponent<StartingBlockScript>();
+					var sb = block.GetComponent<ITarget>();
 					if (sb != null)
 					{
 						TargetList.Add(sb);
@@ -1816,4 +2066,276 @@ namespace LOSpace
 			}
         }
     }
+	/// <summary>
+	/// ロックオン可能なクラスに関するインターフェース
+	/// </summary>
+	public interface ITarget
+    {
+		MPTeam Team
+		{
+			set; get;
+		}
+		GameObject TargetObject
+        {
+			get;
+        }
+		void AddTargetList();
+		void RemoveTargetList();
+    }
+	/// <summary>
+	/// NPC用スクリプト
+	/// </summary>
+	public class NPC : MonoBehaviour, ITarget
+    {
+		public virtual GameObject TargetObject
+		{
+			protected set; get;
+		}
+		public virtual MPTeam Team
+        {
+			set; get;
+        }
+		public virtual void AddTargetList()
+        {
+			if (!LockOnManager.Instance.TargetList.Contains(this))
+            {
+				LockOnManager.Instance.TargetList.Add(this);
+				//Mod.Log($"add");
+            }
+		}
+		public void RemoveTargetList()
+        {
+			if (LockOnManager.Instance.TargetList.Contains(this))
+			{
+				LockOnManager.Instance.TargetList.Remove(this);
+				//Mod.Log($"remove");
+			}
+		}
+		public virtual void Start()
+        {
+			TargetObject = gameObject;
+			AddTargetList();
+		}
+		public virtual void OnEnable()
+        {
+			AddTargetList();
+        }
+		public virtual void OnDisable()
+        {
+			RemoveTargetList();
+        }
+		public virtual void OnDestroy()
+        {
+			RemoveTargetList();
+        }
+    }
+	public class LevelNPC : NPC
+    {
+        protected EntityAI _entityAi;
+		public override MPTeam Team
+        {
+            set
+            {
+				_entityAi.factionSystem.team = value;
+            }
+            get
+            {
+				return _entityAi.factionSystem.team;
+            }
+        }
+		public override void Start()
+		{
+			_entityAi = GetComponent<EntityAI>();
+			base.Start();
+		}
+		public void FixedUpdate()
+        {
+			if (_entityAi.isDead)
+            {
+				RemoveTargetList();
+            }
+        }
+        public override void AddTargetList() // AINPCでnull
+        {
+			if (_entityAi.levelEntity.isStatic || !_entityAi.levelEntity.isSimulating)
+            {
+				return;
+            }
+            base.AddTargetList();
+        }
+	}
+
+	// EnemyAISimple, EntityAI, FreighterAI
+	// シーン名は数字（ステージ番号そのまま）or SANDBOX
+	// "LEVEL xx TITLE OF STAGE/PHYSICS GOAL/..." にある
+	public class SimpleNPC : NPC // 殺してもUI消えない
+    {
+		private EnemyAISimple _simple;
+		private Rigidbody _rigid;
+        public override MPTeam Team
+        {
+            get
+            {
+				return MPTeam.None;
+            }
+        }
+        public override void Start()
+        {
+			_simple = GetComponent<EnemyAISimple>();
+			_rigid = GetComponent<Rigidbody>();
+            base.Start();
+        }
+		public void Update()
+        {
+			if (_simple.isDead)
+            {
+				Mod.Log($"remove 1");
+				RemoveTargetList();
+            }
+			if (_simple.isDestroyed)
+            {
+				Mod.Log($"remove 2");
+				RemoveTargetList();
+            }
+			if (!_simple.isActiveAndEnabled)
+            {
+				Mod.Log($"remove 3");
+				RemoveTargetList();
+            }
+			if (!TargetObject.activeSelf)
+            {
+				Mod.Log($"remove 4");
+				RemoveTargetList();
+            }
+			if (!gameObject.activeSelf)
+            {
+				Mod.Log($"remove 5");
+				RemoveTargetList();
+            }
+			if (_rigid.IsSleeping())
+            {
+				//RemoveTargetList();
+            }
+        }
+        public override void AddTargetList()
+        {
+            if (_simple.isSimulating)
+            {
+				base.AddTargetList();
+            }
+        }
+    }
+	public class EntityAINPC : LevelNPC
+    {
+        public override MPTeam Team
+        {
+            get
+            {
+				return MPTeam.None;
+            }
+        }
+		public void Awake()
+        {
+			//TargetObject = gameObject;
+			//AddTargetList();
+        }
+		public override void AddTargetList()
+		{
+			//Mod.Log($"entity ai npc add target list");
+			if (StatMaster.levelSimulating)
+			{
+				if (!LockOnManager.Instance.TargetList.Contains(this))
+				{
+					LockOnManager.Instance.TargetList.Add(this);
+					//Mod.Log($"add");
+				}
+			}
+		}
+	}
+	public class FreighterNPC : NPC // OK
+    {
+		private FreighterAI _freighter;
+		public override MPTeam Team
+        {
+            get
+            {
+				return MPTeam.None;
+            }
+        }
+        public override void Start()
+        {
+			_freighter = GetComponent<FreighterAI>();
+			base.Start();
+        }
+		public void FixedUpdate()
+        {
+			if (_freighter.machineBroken)
+            {
+				RemoveTargetList();
+            }
+        }
+        public override void AddTargetList()
+        {
+			if (StatMaster.levelSimulating)
+            {
+				base.AddTargetList();
+            }
+        }
+    }
+	public class BirdNPC : NPC
+    {
+		private SimpleBirdAI _bird;
+		private Rigidbody _rigid;
+		public override MPTeam Team
+        {
+            get
+            {
+				return MPTeam.None;
+            }
+        }
+        public override void Start()
+        {
+			_bird = GetComponent<SimpleBirdAI>();
+			_rigid = GetComponent<Rigidbody>();
+			base.Start();
+			//Mod.Log($"bird start");
+        }
+		public void Update()
+        {
+			if (!StatMaster.levelSimulating)
+            {
+				return;
+            }
+
+			if (_bird.popped)
+            {
+				//Mod.Log($"popped");
+				RemoveTargetList();
+            }
+			if (!_bird.gameObject.activeSelf)
+            {
+				//Mod.Log($"non active");
+				RemoveTargetList();
+            }
+			if (_rigid.IsSleeping())
+            {
+				//Mod.Log($"sleeping");
+				RemoveTargetList();
+            }
+
+			//Mod.Log($"sleeping: {_rigid.IsSleeping()}");
+        }
+        public override void AddTargetList()
+        {
+			if (StatMaster.levelSimulating)
+			{
+				base.AddTargetList();
+			}
+		}
+		public override void OnDisable()
+		{
+			//Mod.Log($"on disabled");
+			RemoveTargetList();
+		}
+	}
 }
